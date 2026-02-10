@@ -1,0 +1,27 @@
+CREATE TABLE ShoppingListEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    householdId TEXT,
+    isPersonal INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL,
+    isOwner INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0,
+    itemCount INTEGER NOT NULL DEFAULT 0,
+    uncheckedCount INTEGER NOT NULL DEFAULT 0,
+    isPinned INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0
+);
+
+selectAll:
+SELECT * FROM ShoppingListEntity ORDER BY isPinned DESC, name ASC;
+
+selectById:
+SELECT * FROM ShoppingListEntity WHERE id = ?;
+
+insert:
+INSERT OR REPLACE INTO ShoppingListEntity(id, name, householdId, isPersonal, createdAt, isOwner, itemCount, uncheckedCount, isPinned)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM ShoppingListEntity WHERE id = ?;
+
+deleteAll:
+DELETE FROM ShoppingListEntity;

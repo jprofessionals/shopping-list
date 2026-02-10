@@ -1,0 +1,24 @@
+FROM eclipse-temurin:25-jdk
+
+WORKDIR /app
+
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# Copy gradle wrapper and build files
+COPY gradlew .
+COPY gradle gradle
+COPY build.gradle.kts .
+COPY settings.gradle.kts .
+
+# Download dependencies
+RUN ./gradlew dependencies --no-daemon
+
+# Copy source code
+COPY src src
+
+# Build the application
+RUN ./gradlew classes --no-daemon
+
+# Run the application
+CMD ["./gradlew", "run", "--no-daemon"]

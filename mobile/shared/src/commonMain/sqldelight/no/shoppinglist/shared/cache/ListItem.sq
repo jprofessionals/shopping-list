@@ -1,0 +1,32 @@
+CREATE TABLE ListItemEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    listId TEXT NOT NULL,
+    name TEXT NOT NULL,
+    quantity REAL NOT NULL DEFAULT 1.0,
+    unit TEXT,
+    isChecked INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0,
+    checkedByName TEXT,
+    createdAt TEXT NOT NULL
+);
+
+selectByListId:
+SELECT * FROM ListItemEntity WHERE listId = ? ORDER BY isChecked ASC, createdAt ASC;
+
+selectById:
+SELECT * FROM ListItemEntity WHERE id = ?;
+
+insert:
+INSERT OR REPLACE INTO ListItemEntity(id, listId, name, quantity, unit, isChecked, checkedByName, createdAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM ListItemEntity WHERE id = ?;
+
+deleteByListId:
+DELETE FROM ListItemEntity WHERE listId = ?;
+
+deleteCheckedByListId:
+DELETE FROM ListItemEntity WHERE listId = ? AND isChecked = 1;
+
+deleteAll:
+DELETE FROM ListItemEntity;

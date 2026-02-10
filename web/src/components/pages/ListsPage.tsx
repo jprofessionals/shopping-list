@@ -1,0 +1,91 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { setLists, setLoading as setListsLoading } from '../../store/listsSlice';
+import { ShoppingListsPage, CreateListModal } from '../shopping-list';
+
+export default function ListsPage() {
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const token = useAppSelector((state) => state.auth.token);
+  const lists = useAppSelector((state) => state.lists.items);
+
+  useEffect(() => {
+    const fetchLists = async () => {
+      if (!token) return;
+      dispatch(setListsLoading(true));
+      try {
+        const response = await fetch('http://localhost:8080/lists', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          dispatch(setLists(data));
+        }
+      } catch (err) {
+        console.error('Failed to fetch lists:', err);
+      } finally {
+        dispatch(setListsLoading(false));
+      }
+    };
+
+    fetchLists();
+  }, [token, dispatch]);
+
+  const handleSelectList = (listId: string) => {
+    navigate(`/lists/${listId}`);
+  };
+
+  const handleCreateClick = () => {
+    setShowCreateModal(true);
+  };
+
+  const handlePin = useCallback(
+    async (listId: string) => {
+      if (!token) return;
+      try {
+        const response = await fetch(`http://localhost:8080/lists/${listId}/pin`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          dispatch(setLists(lists.map((l) => (l.id === listId ? { ...l, isPinned: true } : l))));
+        }
+      } catch (err) {
+        console.error('Failed to pin list:', err);
+      }
+    },
+    [token, lists, dispatch]
+  );
+
+  const handleUnpin = useCallback(
+    async (listId: string) => {
+      if (!token) return;
+      try {
+        const response = await fetch(`http://localhost:8080/lists/${listId}/pin`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          dispatch(setLists(lists.map((l) => (l.id === listId ? { ...l, isPinned: false } : l))));
+        }
+      } catch (err) {
+        console.error('Failed to unpin list:', err);
+      }
+    },
+    [token, lists, dispatch]
+  );
+
+  return (
+    <>
+      <ShoppingListsPage
+        onSelectList={handleSelectList}
+        onCreateClick={handleCreateClick}
+        onPin={handlePin}
+        onUnpin={handleUnpin}
+      />
+      {showCreateModal && <CreateListModal onClose={() => setShowCreateModal(false)} />}
+    </>
+  );
+}

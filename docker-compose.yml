@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: shopping-list-db
+    environment:
+      POSTGRES_USER: shopping
+      POSTGRES_PASSWORD: shopping_dev
+      POSTGRES_DB: shopping_list
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: shopping-list-valkey
+    ports:
+      - "6379:6379"
+    command: valkey-server --save "" --appendonly no
+
+volumes:
+  postgres_data:

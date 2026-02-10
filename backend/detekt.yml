@@ -1,0 +1,17 @@
+complexity:
+  LongMethod:
+    allowedLines: 30
+  LongParameterList:
+    allowedFunctionParameters: 8
+    allowedConstructorParameters: 10
+  TooManyFunctions:
+    allowedFunctionsPerFile: 20
+    allowedFunctionsPerClass: 15
+
+style:
+  MagicNumber:
+    active: false
+  MaxLineLength:
+    maxLineLength: 120
+  WildcardImport:
+    active: true

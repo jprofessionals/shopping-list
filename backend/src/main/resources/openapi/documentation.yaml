@@ -1,0 +1,1583 @@
+openapi: 3.1.0
+info:
+  title: Shopping List API
+  description: |
+    REST API for the Shopping List application.
+
+    ## Real-time Updates
+
+    For real-time synchronization, connect to the WebSocket API.
+    See [WebSocket API Documentation](/docs/websocket) for details on events and subscriptions.
+  version: 1.0.0
+  contact:
+    name: Shopping List Team
+
+externalDocs:
+  description: WebSocket API Documentation
+  url: /docs/websocket
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+tags:
+  - name: Auth
+    description: Authentication endpoints
+  - name: Households
+    description: Household management
+  - name: Shopping Lists
+    description: Shopping list operations
+  - name: List Items
+    description: Shopping list item operations
+  - name: Sharing
+    description: List sharing operations
+  - name: Shared Access
+    description: Access shared lists via token
+  - name: WebSocket
+    description: Real-time updates via WebSocket
+  - name: Activity
+    description: List activity feed
+  - name: Suggestions
+    description: Item autocomplete suggestions
+  - name: Preferences
+    description: User preferences
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+
+    AuthConfigResponse:
+      type: object
+      properties:
+        googleEnabled:
+          type: boolean
+        localEnabled:
+          type: boolean
+        googleClientId:
+          type: string
+          nullable: true
+
+    LocalLoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    LocalRegisterRequest:
+      type: object
+      required:
+        - email
+        - displayName
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+
+    CreateHouseholdRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    UpdateHouseholdRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    HouseholdResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        memberCount:
+          type: integer
+        isOwner:
+          type: boolean
+
+    HouseholdDetailResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberResponse'
+
+    MemberResponse:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [OWNER, MEMBER]
+        joinedAt:
+          type: string
+          format: date-time
+
+    AddMemberRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [OWNER, MEMBER]
+          default: MEMBER
+
+    UpdateMemberRoleRequest:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          type: string
+          enum: [OWNER, MEMBER]
+
+    CreateListRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        householdId:
+          type: string
+          format: uuid
+          nullable: true
+        isPersonal:
+          type: boolean
+          default: false
+
+    UpdateListRequest:
+      type: object
+      required:
+        - name
+        - isPersonal
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        isPersonal:
+          type: boolean
+
+    ListResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        householdId:
+          type: string
+          format: uuid
+          nullable: true
+        isPersonal:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        isOwner:
+          type: boolean
+
+    ListDetailResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        householdId:
+          type: string
+          format: uuid
+          nullable: true
+        isPersonal:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        isOwner:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemResponse'
+
+    ItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+          nullable: true
+        isChecked:
+          type: boolean
+        checkedByName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateItemRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        quantity:
+          type: number
+          default: 1.0
+        unit:
+          type: string
+          nullable: true
+
+    UpdateItemRequest:
+      type: object
+      required:
+        - name
+        - quantity
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        quantity:
+          type: number
+        unit:
+          type: string
+          nullable: true
+
+    CreateShareRequest:
+      type: object
+      required:
+        - type
+        - permission
+      properties:
+        type:
+          type: string
+          enum: [USER, LINK]
+        accountId:
+          type: string
+          format: uuid
+          description: Required for USER shares
+        permission:
+          type: string
+          enum: [READ, CHECK, WRITE]
+        expirationDays:
+          type: integer
+          default: 7
+          description: Only used for LINK shares
+
+    ShareResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [USER, LINK]
+        accountId:
+          type: string
+          format: uuid
+          nullable: true
+        accountEmail:
+          type: string
+          format: email
+          nullable: true
+        linkToken:
+          type: string
+          nullable: true
+        permission:
+          type: string
+          enum: [READ, CHECK, WRITE]
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    SharedListResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        permission:
+          type: string
+          enum: [READ, CHECK, WRITE]
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedItemResponse'
+
+    SharedItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+          nullable: true
+        isChecked:
+          type: boolean
+
+    ActivityEntry:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Type of activity (e.g., item_added, item_checked, list_updated)
+        actorName:
+          type: string
+          description: Display name of the user who performed the action
+        targetName:
+          type: string
+          nullable: true
+          description: Name of the target item or entity
+        timestamp:
+          type: string
+          format: date-time
+
+    ActivityResponse:
+      type: object
+      properties:
+        activity:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityEntry'
+
+    PinResponse:
+      type: object
+      properties:
+        pinned:
+          type: boolean
+
+    ItemSuggestion:
+      type: object
+      properties:
+        name:
+          type: string
+        typicalQuantity:
+          type: number
+          nullable: true
+        typicalUnit:
+          type: string
+          nullable: true
+        useCount:
+          type: integer
+
+    SuggestionsResponse:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemSuggestion'
+
+    UserPreferences:
+      type: object
+      properties:
+        smartParsingEnabled:
+          type: boolean
+        defaultQuantity:
+          type: number
+        theme:
+          type: string
+          enum: [light, dark, system]
+
+    UpdatePreferencesRequest:
+      type: object
+      properties:
+        smartParsingEnabled:
+          type: boolean
+        defaultQuantity:
+          type: number
+        theme:
+          type: string
+          enum: [light, dark, system]
+
+    DeleteCheckedItemsResponse:
+      type: object
+      properties:
+        deletedItemIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    BulkCreateItemsRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - name
+            properties:
+              name:
+                type: string
+                minLength: 1
+                maxLength: 1000
+              quantity:
+                type: number
+                default: 1.0
+              unit:
+                type: string
+                nullable: true
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+
+  /ws:
+    get:
+      summary: WebSocket connection for real-time updates
+      description: |
+        Connect via WebSocket to receive real-time updates for shopping lists.
+
+        **Authentication:** Pass JWT token as query parameter `?token=<jwt>`
+
+        **Auto-subscription:** On connect, client is automatically subscribed to all accessible lists.
+
+        **Events received:**
+        - `item:added` - New item added to a subscribed list
+        - `item:updated` - Item properties changed
+        - `item:checked` - Item checked/unchecked
+        - `item:removed` - Item deleted
+        - `list:updated` - List properties changed
+        - `list:deleted` - List deleted
+
+        **Commands to send:**
+        - `{"type": "subscribe", "listIds": ["uuid1", "uuid2"]}` - Subscribe to additional lists
+        - `{"type": "unsubscribe", "listIds": ["uuid1"]}` - Unsubscribe from lists
+        - `{"type": "ping"}` - Keepalive ping (receives pong)
+
+        See AsyncAPI documentation for full event schemas.
+      tags:
+        - WebSocket
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: JWT authentication token
+      responses:
+        '101':
+          description: WebSocket connection established
+        '401':
+          description: Invalid or missing token
+
+  # Auth endpoints
+  /auth/config:
+    get:
+      tags:
+        - Auth
+      summary: Get authentication configuration
+      operationId: getAuthConfig
+      responses:
+        '200':
+          description: Authentication configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthConfigResponse'
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login with email and password
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocalLoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new account
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocalRegisterRequest'
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Get current user info
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Account not found
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logged out successfully
+
+  /auth/google:
+    get:
+      tags:
+        - Auth
+      summary: Initiate Google OAuth flow
+      operationId: googleAuth
+      responses:
+        '302':
+          description: Redirect to Google
+
+  /auth/google/callback:
+    get:
+      tags:
+        - Auth
+      summary: Google OAuth callback
+      operationId: googleAuthCallback
+      parameters:
+        - name: code
+          in: query
+          schema:
+            type: string
+        - name: error
+          in: query
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to frontend with token or error
+
+  # Household endpoints
+  /households:
+    get:
+      tags:
+        - Households
+      summary: List user's households
+      operationId: listHouseholds
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of households
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HouseholdResponse'
+        '401':
+          description: Unauthorized
+
+    post:
+      tags:
+        - Households
+      summary: Create a new household
+      operationId: createHousehold
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHouseholdRequest'
+      responses:
+        '201':
+          description: Household created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HouseholdResponse'
+        '401':
+          description: Unauthorized
+
+  /households/{id}:
+    get:
+      tags:
+        - Households
+      summary: Get household details
+      operationId: getHousehold
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Household details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HouseholdDetailResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Not a member
+        '404':
+          description: Household not found
+
+    patch:
+      tags:
+        - Households
+      summary: Update household
+      operationId: updateHousehold
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHouseholdRequest'
+      responses:
+        '200':
+          description: Household updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HouseholdResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Not a member
+        '404':
+          description: Household not found
+
+    delete:
+      tags:
+        - Households
+      summary: Delete household
+      operationId: deleteHousehold
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Household deleted
+        '401':
+          description: Unauthorized
+        '403':
+          description: Not the owner
+        '404':
+          description: Household not found
+
+  /households/{id}/members:
+    post:
+      tags:
+        - Households
+      summary: Add member to household
+      operationId: addHouseholdMember
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMemberRequest'
+      responses:
+        '201':
+          description: Member added
+        '401':
+          description: Unauthorized
+        '403':
+          description: Not the owner
+        '404':
+          description: User not found
+        '409':
+          description: User is already a member
+
+  /households/{id}/members/{accountId}:
+    patch:
+      tags:
+        - Households
+      summary: Update member role
+      operationId: updateMemberRole
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMemberRoleRequest'
+      responses:
+        '200':
+          description: Role updated
+        '401':
+          description: Unauthorized
+        '403':
+          description: Not the owner
+        '404':
+          description: Member not found
+
+    delete:
+      tags:
+        - Households
+      summary: Remove member from household
+      operationId: removeMember
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Member removed
+        '401':
+          description: Unauthorized
+        '403':
+          description: Not authorized
+        '404':
+          description: Member not found
+
+  # Shopping List endpoints
+  /lists:
+    get:
+      tags:
+        - Shopping Lists
+      summary: List accessible shopping lists
+      operationId: listShoppingLists
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of shopping lists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ListResponse'
+        '401':
+          description: Unauthorized
+
+    post:
+      tags:
+        - Shopping Lists
+      summary: Create a new shopping list
+      operationId: createShoppingList
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateListRequest'
+      responses:
+        '201':
+          description: Shopping list created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Not a household member
+
+  /lists/{id}:
+    get:
+      tags:
+        - Shopping Lists
+      summary: Get shopping list details
+      operationId: getShoppingList
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Shopping list details with items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: No access
+        '404':
+          description: List not found
+
+    patch:
+      tags:
+        - Shopping Lists
+      summary: Update shopping list
+      operationId: updateShoppingList
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateListRequest'
+      responses:
+        '200':
+          description: Shopping list updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: No access
+        '404':
+          description: List not found
+
+    delete:
+      tags:
+        - Shopping Lists
+      summary: Delete shopping list
+      operationId: deleteShoppingList
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Shopping list deleted
+        '401':
+          description: Unauthorized
+        '403':
+          description: Not the owner
+        '404':
+          description: List not found
+
+  # List Item endpoints
+  /lists/{id}/items:
+    post:
+      tags:
+        - List Items
+      summary: Add item to list
+      operationId: addListItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemRequest'
+      responses:
+        '201':
+          description: Item added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: No write access
+
+  /lists/{id}/items/{itemId}:
+    patch:
+      tags:
+        - List Items
+      summary: Update list item
+      operationId: updateListItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateItemRequest'
+      responses:
+        '200':
+          description: Item updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: No write access
+        '404':
+          description: Item not found
+
+    delete:
+      tags:
+        - List Items
+      summary: Delete list item
+      operationId: deleteListItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Item deleted
+        '401':
+          description: Unauthorized
+        '403':
+          description: No write access
+
+  /lists/{id}/items/{itemId}/check:
+    post:
+      tags:
+        - List Items
+      summary: Toggle item checked status
+      operationId: toggleItemCheck
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Item check status toggled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: No check access
+        '404':
+          description: Item not found
+
+  /lists/{id}/items/checked:
+    delete:
+      tags:
+        - List Items
+      summary: Delete all checked items from list
+      operationId: deleteCheckedItems
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Checked items deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteCheckedItemsResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: No write access
+        '404':
+          description: List not found
+
+  /lists/{id}/items/bulk:
+    post:
+      tags:
+        - List Items
+      summary: Bulk create items
+      operationId: bulkCreateItems
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkCreateItemsRequest'
+      responses:
+        '201':
+          description: Items created
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: No write access
+        '404':
+          description: List not found
+
+  # Activity endpoints
+  /lists/{id}/activity:
+    get:
+      tags:
+        - Activity
+      summary: Get list activity feed
+      operationId: getListActivity
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+          description: Maximum number of activity entries to return
+      responses:
+        '200':
+          description: Activity feed for the list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: No access to list
+        '404':
+          description: List not found
+
+  # Pin endpoints
+  /lists/{id}/pin:
+    post:
+      tags:
+        - Shopping Lists
+      summary: Pin a list
+      operationId: pinList
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List pinned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PinResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: No access to list
+        '404':
+          description: List not found
+
+    delete:
+      tags:
+        - Shopping Lists
+      summary: Unpin a list
+      operationId: unpinList
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List unpinned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PinResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: No access to list
+        '404':
+          description: List not found
+
+  # Suggestions endpoint
+  /items/suggestions:
+    get:
+      tags:
+        - Suggestions
+      summary: Get item autocomplete suggestions
+      operationId: getItemSuggestions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query for item name
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+          description: Maximum number of suggestions to return
+      responses:
+        '200':
+          description: Item suggestions based on user history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestionsResponse'
+        '401':
+          description: Unauthorized
+
+  # Preferences endpoints
+  /preferences:
+    get:
+      tags:
+        - Preferences
+      summary: Get user preferences
+      operationId: getUserPreferences
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+        '401':
+          description: Unauthorized
+
+    patch:
+      tags:
+        - Preferences
+      summary: Update user preferences
+      operationId: updateUserPreferences
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePreferencesRequest'
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+
+  # Sharing endpoints
+  /lists/{id}/shares:
+    get:
+      tags:
+        - Sharing
+      summary: List shares for a list
+      operationId: listShares
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of shares
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShareResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Not the owner
+        '404':
+          description: List not found
+
+    post:
+      tags:
+        - Sharing
+      summary: Create a share
+      operationId: createShare
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShareRequest'
+      responses:
+        '201':
+          description: Share created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Not the owner
+        '404':
+          description: List not found
+
+  /lists/{id}/shares/{shareId}:
+    delete:
+      tags:
+        - Sharing
+      summary: Revoke a share
+      operationId: revokeShare
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: shareId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Share revoked
+        '401':
+          description: Unauthorized
+        '403':
+          description: Not the owner
+        '404':
+          description: List not found
+
+  # Shared Access endpoints
+  /shared/{token}:
+    get:
+      tags:
+        - Shared Access
+      summary: Access a shared list via token
+      operationId: getSharedList
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Shared list data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedListResponse'
+        '404':
+          description: Share not found
+        '410':
+          description: Share link expired

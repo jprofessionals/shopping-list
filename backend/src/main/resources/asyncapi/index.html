@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shopping List WebSocket API</title>
+    <link rel="stylesheet" href="https://unpkg.com/@asyncapi/react-component@1.0.0-next.54/styles/default.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="asyncapi"></div>
+    <script src="https://unpkg.com/@asyncapi/react-component@1.0.0-next.54/browser/standalone/index.js"></script>
+    <script>
+        AsyncApiStandalone.render({
+            schema: {
+                url: '/docs/websocket/spec'
+            },
+            config: {
+                show: {
+                    sidebar: true,
+                    info: true,
+                    servers: true,
+                    operations: true,
+                    messages: true,
+                    schemas: true
+                }
+            }
+        }, document.getElementById('asyncapi'));
+    </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+CREATE TABLE HouseholdEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    createdAt TEXT NOT NULL,
+    memberCount INTEGER NOT NULL DEFAULT 0,
+    isOwner INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0
+);
+
+CREATE TABLE HouseholdMemberEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    householdId TEXT NOT NULL,
+    accountId TEXT NOT NULL,
+    email TEXT NOT NULL,
+    displayName TEXT NOT NULL,
+    avatarUrl TEXT,
+    role TEXT NOT NULL,
+    joinedAt TEXT NOT NULL
+);
+
+selectAllHouseholds:
+SELECT * FROM HouseholdEntity ORDER BY name ASC;
+
+selectHouseholdById:
+SELECT * FROM HouseholdEntity WHERE id = ?;
+
+insertHousehold:
+INSERT OR REPLACE INTO HouseholdEntity(id, name, createdAt, memberCount, isOwner)
+VALUES (?, ?, ?, ?, ?);
+
+deleteHouseholdById:
+DELETE FROM HouseholdEntity WHERE id = ?;
+
+selectMembersByHouseholdId:
+SELECT * FROM HouseholdMemberEntity WHERE householdId = ?;
+
+insertMember:
+INSERT OR REPLACE INTO HouseholdMemberEntity(id, householdId, accountId, email, displayName, avatarUrl, role, joinedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteMembersByHouseholdId:
+DELETE FROM HouseholdMemberEntity WHERE householdId = ?;
+
+deleteMember:
+DELETE FROM HouseholdMemberEntity WHERE householdId = ? AND accountId = ?;
+
+deleteHouseholdsNotIn:
+DELETE FROM HouseholdEntity WHERE id NOT IN ?;
+
+deleteAllHouseholds:
+DELETE FROM HouseholdEntity;
+
+deleteAllMembers:
+DELETE FROM HouseholdMemberEntity;

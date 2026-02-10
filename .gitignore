@@ -1,0 +1,30 @@
+# Worktrees
+.worktrees/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Build outputs
+backend/build/
+backend/.gradle/
+backend/.kotlin/
+web/node_modules/
+web/dist/
+mobile/.gradle/
+mobile/.kotlin/
+mobile/build/
+mobile/androidApp/build/
+mobile/shared/build/
+mobile/local.properties
+mobile/shared/src/commonMain/sqldelight/databases/
+node_modules/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
