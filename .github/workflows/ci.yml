@@ -144,17 +144,17 @@ jobs:
         run: mkdir -p ~/.ssh && echo "StrictHostKeyChecking no" >> ~/.ssh/config
 
       - name: Deploy backend image
-        run: rsync -avz backend.tar deploy@${{ secrets.VM_HOST }}:/home/deploy/shopping-list/
+        run: rsync -avz backend.tar deploy@${{ vars.VM_HOST }}:/home/deploy/shopping-list/
 
       - name: Deploy frontend
-        run: rsync -avz --delete web/dist/ deploy@${{ secrets.VM_HOST }}:/home/deploy/shopping-list/frontend/
+        run: rsync -avz --delete web/dist/ deploy@${{ vars.VM_HOST }}:/home/deploy/shopping-list/frontend/
 
       - name: Write vault password file
         run: echo "${{ secrets.VAULT_PASSWORD }}" > /tmp/vault_password
 
       - name: Run Ansible playbook
         env:
-          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_HOST: ${{ vars.VM_HOST }}
         run: ansible-playbook infrastructure/ansible/deploy.yml --vault-password-file /tmp/vault_password
 
       - name: Cleanup secrets
