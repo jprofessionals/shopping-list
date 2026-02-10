@@ -8,7 +8,7 @@
     app_dir: /home/deploy/shopping-list
     frontend_dir: "{{ app_dir }}/frontend"
     backend_port: 8080
-    app_domain: "list.{{ domain | default('jpro.dev') }}"
+    app_domain: "liste.{{ domain | default('jpro.dev') }}"
     container_name: shopping-list-backend
     image_name: shopping-list-backend
     database_url: "jdbc:postgresql://127.0.0.1:5432/shopping_list_db"
