@@ -126,7 +126,7 @@ jobs:
         run: cd backend && ./gradlew installDist
 
       - name: Build backend Docker image
-        run: docker build -t shopping-list-backend backend/build/install/backend
+        run: docker build -f backend/Dockerfile -t shopping-list-backend backend/build/install/shopping-list-backend
 
       - name: Save Docker image
         run: docker save shopping-list-backend:latest -o backend.tar
