@@ -53,8 +53,8 @@ test.describe('Comments on Lists', () => {
     await page.getByPlaceholder('Add a comment...').fill(commentText);
     await page.getByRole('button', { name: 'Send' }).click();
 
-    // Verify comment text appears
-    await expect(page.getByText(commentText)).toBeVisible({ timeout: 10000 });
+    // Verify comment text appears (may briefly show both optimistic and server copy)
+    await expect(page.getByText(commentText).first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should edit own comment on a list', async ({ page }) => {
