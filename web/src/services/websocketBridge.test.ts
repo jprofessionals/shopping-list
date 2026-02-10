@@ -4,6 +4,7 @@ import authReducer from '../store/authSlice';
 import householdsReducer from '../store/householdsSlice';
 import listsReducer from '../store/listsSlice';
 import websocketReducer from '../store/websocketSlice';
+import commentsReducer from '../store/commentsSlice';
 import {
   initWebSocketBridge,
   cleanupWebSocketBridge,
@@ -25,6 +26,7 @@ function createTestStore(preloadedState?: Partial<RootState>) {
       households: householdsReducer,
       lists: listsReducer,
       websocket: websocketReducer,
+      comments: commentsReducer,
     },
     preloadedState: preloadedState as RootState,
   });

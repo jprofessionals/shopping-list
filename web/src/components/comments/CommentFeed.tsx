@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { type TFunction } from 'i18next';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import {
   setComments,
@@ -14,7 +15,7 @@ interface CommentFeedProps {
   targetId: string;
 }
 
-function formatRelativeTime(dateString: string, t: (key: string, opts?: object) => string): string {
+function formatRelativeTime(dateString: string, t: TFunction): string {
   const now = Date.now();
   const date = new Date(dateString).getTime();
   const diffMs = now - date;
