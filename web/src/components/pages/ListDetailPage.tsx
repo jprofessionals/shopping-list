@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setItems, addList, setLists, setCurrentList, type ShoppingList } from '../../store/listsSlice';
+import {
+  setItems,
+  addList,
+  setLists,
+  setCurrentList,
+  type ShoppingList,
+} from '../../store/listsSlice';
 import { ShoppingListView, ShareListModal } from '../shopping-list';
 import { LoadingSpinner, ErrorAlert } from '../common';
 

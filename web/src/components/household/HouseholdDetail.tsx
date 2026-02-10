@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
@@ -49,12 +49,12 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
     ...extra,
   });
 
-  const fetchHousehold = async () => {
+  const fetchHousehold = useCallback(async () => {
     if (!token) return;
 
     try {
       const response = await fetch(`http://localhost:8080/households/${householdId}`, {
-        headers: authHeaders(),
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok) throw new Error('Failed to fetch household');
@@ -66,11 +66,11 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token, householdId]);
 
   useEffect(() => {
     fetchHousehold();
-  }, [householdId, token]);
+  }, [fetchHousehold]);
 
   const handleDelete = async () => {
     if (!token || !confirm(t('householdDetail.confirmDelete'))) return;
@@ -129,10 +129,13 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
     if (!token || !confirm(t('householdDetail.confirmRemoveMember', { name: displayName }))) return;
 
     try {
-      const response = await fetch(`http://localhost:8080/households/${householdId}/members/${accountId}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-      });
+      const response = await fetch(
+        `http://localhost:8080/households/${householdId}/members/${accountId}`,
+        {
+          method: 'DELETE',
+          headers: authHeaders(),
+        }
+      );
 
       if (!response.ok) throw new Error('Failed to remove member');
 
@@ -146,11 +149,14 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:8080/households/${householdId}/members/${accountId}`, {
-        method: 'PATCH',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ role: newRole }),
-      });
+      const response = await fetch(
+        `http://localhost:8080/households/${householdId}/members/${accountId}`,
+        {
+          method: 'PATCH',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ role: newRole }),
+        }
+      );
 
       if (!response.ok) throw new Error('Failed to update role');
 
