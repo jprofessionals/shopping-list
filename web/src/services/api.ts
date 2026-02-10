@@ -5,7 +5,7 @@
 import { store } from '../store/store';
 import { loginSuccess, logout } from '../store/authSlice';
 
-const API_BASE = 'http://localhost:8080';
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
 
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;

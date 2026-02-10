@@ -179,18 +179,12 @@ class WebSocketSyncTest :
             }
         }
 
-        fun configureTestApp(app: Application) {
-            app.install(WebSockets)
-            app.install(ContentNegotiation) {
-                json(
-                    Json {
-                        prettyPrint = true
-                        isLenient = true
-                        ignoreUnknownKeys = true
-                    },
-                )
+        fun Application.installTestPlugins() {
+            install(WebSockets)
+            install(ContentNegotiation) {
+                json(Json { prettyPrint = true; isLenient = true; ignoreUnknownKeys = true })
             }
-            app.install(Authentication) {
+            install(Authentication) {
                 jwt("auth-jwt") {
                     realm = authConfig.jwt.realm
                     verifier(
@@ -209,7 +203,10 @@ class WebSocketSyncTest :
                     }
                 }
             }
-            app.routing {
+        }
+
+        fun Application.installTestRoutes() {
+            routing {
                 authRoutes(authConfig, accountService, jwtService, refreshTokenService, tokenBlacklistService)
                 shoppingListRoutes(
                     shoppingListService,
@@ -230,6 +227,11 @@ class WebSocketSyncTest :
                     broadcastService,
                 )
             }
+        }
+
+        fun configureTestApp(app: Application) {
+            app.installTestPlugins()
+            app.installTestRoutes()
         }
 
         test("item:added broadcast - adding item via REST sends event to WebSocket") {

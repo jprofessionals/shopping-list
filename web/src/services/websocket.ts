@@ -229,8 +229,16 @@ export interface WebSocketConfig {
   maxReconnectAttempts?: number;
 }
 
+function getDefaultWsUrl(): string {
+  if (typeof window !== 'undefined' && window.location?.host) {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/ws`;
+  }
+  return 'ws://localhost:8080/ws';
+}
+
 const DEFAULT_CONFIG: Required<WebSocketConfig> = {
-  url: 'ws://localhost:8080/ws',
+  url: import.meta.env.VITE_WS_URL || getDefaultWsUrl(),
   pingInterval: 30000,
   idleTimeout: 600000, // 10 minutes
   initialReconnectDelay: 1000,
