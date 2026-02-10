@@ -1,0 +1,103 @@
+---
+- name: Deploy Shopping List to dev VM
+  hosts: devserver
+  vars_files:
+    - "{{ ansible_controll_vars | default('../../ansible-controll/inventory/group_vars/all.yml') }}"
+  vars:
+    app_name: shopping-list
+    app_dir: /home/deploy/shopping-list
+    frontend_dir: "{{ app_dir }}/frontend"
+    backend_port: 8080
+    app_domain: "list.{{ domain | default('jpro.dev') }}"
+    container_name: shopping-list-backend
+    image_name: shopping-list-backend
+    database_url: "jdbc:postgresql://127.0.0.1:5432/shopping_list_db"
+    database_user: "shopping_list"
+    database_password: "{{ vault_shopping_list_db_password }}"
+    jwt_secret_file: "{{ app_dir }}/.jwt_secret"
+    valkey_host: "127.0.0.1"
+    valkey_port: 6379
+    google_callback_url: "https://{{ app_domain }}/auth/google/callback"
+
+  tasks:
+    - name: Check if JWT secret exists
+      ansible.builtin.stat:
+        path: "{{ jwt_secret_file }}"
+      register: jwt_file
+
+    - name: Generate JWT secret on first deploy
+      ansible.builtin.shell: openssl rand -hex 32 > {{ jwt_secret_file }}
+      when: not jwt_file.stat.exists
+
+    - name: Set JWT secret file permissions
+      ansible.builtin.file:
+        path: "{{ jwt_secret_file }}"
+        mode: "0600"
+
+    - name: Read JWT secret
+      ansible.builtin.slurp:
+        src: "{{ jwt_secret_file }}"
+      register: jwt_secret_content
+
+    - name: Set JWT secret variable
+      ansible.builtin.set_fact:
+        jwt_secret: "{{ jwt_secret_content.content | b64decode | trim }}"
+
+    - name: Load Docker image
+      ansible.builtin.shell: docker load -i {{ app_dir }}/backend.tar
+      changed_when: true
+
+    - name: Stop existing container
+      ansible.builtin.shell: docker rm -f {{ container_name }} 2>/dev/null || true
+      changed_when: true
+
+    - name: Start backend container
+      ansible.builtin.shell: >
+        docker run -d
+        --name {{ container_name }}
+        --restart unless-stopped
+        --network host
+        -e DATABASE_URL={{ database_url }}
+        -e DATABASE_USER={{ database_user }}
+        -e DATABASE_PASSWORD={{ database_password }}
+        -e JWT_SECRET={{ jwt_secret }}
+        -e VALKEY_HOST={{ valkey_host }}
+        -e VALKEY_PORT={{ valkey_port }}
+        -e PORT={{ backend_port }}
+        -e GOOGLE_CALLBACK_URL={{ google_callback_url }}
+        {{ image_name }}:latest
+      changed_when: true
+
+    - name: Write Caddy site config
+      ansible.builtin.copy:
+        dest: "/etc/caddy/sites/{{ app_name }}.caddy"
+        content: |
+          {{ app_domain }} {
+              @backend path /auth/* /households/* /lists/* /shared/* /ws /health /swagger* /activity/* /suggestions/* /preferences/* /asyncapi*
+              handle @backend {
+                  reverse_proxy localhost:{{ backend_port }}
+              }
+              handle {
+                  root * {{ frontend_dir }}
+                  try_files {path} /index.html
+                  file_server
+              }
+          }
+        mode: "0644"
+
+    - name: Reload Caddy
+      ansible.builtin.shell: sudo systemctl reload caddy
+      changed_when: true
+
+    - name: Wait for backend health check
+      ansible.builtin.uri:
+        url: "http://localhost:{{ backend_port }}/health"
+        status_code: 200
+      register: health
+      retries: 15
+      delay: 2
+      until: health.status == 200
+
+    - name: Prune old Docker images
+      ansible.builtin.shell: docker image prune -f
+      changed_when: true
