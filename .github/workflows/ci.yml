@@ -107,7 +107,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: jprofessionals/ansible-dev-vm-controll
-          path: ansible-controll
+          ssh-key: ${{ secrets.ANSIBLE_CONTROLL_DEPLOY_KEY }}
+          path: ansible-dev-vm-controll
 
       - uses: actions/setup-java@v4
         with:

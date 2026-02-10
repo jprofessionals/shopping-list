@@ -2,7 +2,7 @@
 - name: Deploy Shopping List to dev VM
   hosts: devserver
   vars_files:
-    - "{{ ansible_controll_vars | default('../../ansible-controll/inventory/group_vars/all.yml') }}"
+    - "{{ ansible_controll_vars | default('../../ansible-dev-vm-controll/inventory/group_vars/all.yml') }}"
   vars:
     app_name: shopping-list
     app_dir: /home/deploy/shopping-list
