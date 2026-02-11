@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
 import en from './locales/en/translation.json';
+import ko from './locales/ko/translation.json';
 import nb from './locales/nb/translation.json';
 import nn from './locales/nn/translation.json';
 import se from './locales/se/translation.json';
@@ -10,6 +11,7 @@ import tl from './locales/tl/translation.json';
 
 export const languageNames: Record<string, string> = {
   en: 'English',
+  ko: '한국어',
   nb: 'Norsk bokmal',
   nn: 'Norsk nynorsk',
   se: 'Davvisamigiella',
@@ -22,6 +24,7 @@ i18n
   .init({
     resources: {
       en: { translation: en },
+      ko: { translation: ko },
       nb: { translation: nb },
       nn: { translation: nn },
       se: { translation: se },

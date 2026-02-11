@@ -49,6 +49,7 @@ import no.shoppinglist.domain.ListActivities
 import no.shoppinglist.domain.ListItems
 import no.shoppinglist.domain.ListShares
 import no.shoppinglist.domain.PinnedLists
+import no.shoppinglist.domain.RecurringItems
 import no.shoppinglist.domain.RefreshTokens
 import no.shoppinglist.domain.ShoppingLists
 import no.shoppinglist.routes.auth.authRoutes
@@ -62,6 +63,7 @@ import no.shoppinglist.service.JwtService
 import no.shoppinglist.service.ListItemService
 import no.shoppinglist.service.ListShareService
 import no.shoppinglist.service.PinnedListService
+import no.shoppinglist.service.RecurringItemService
 import no.shoppinglist.service.RefreshTokenService
 import no.shoppinglist.service.ShoppingListService
 import no.shoppinglist.service.TokenBlacklistService
@@ -90,6 +92,7 @@ class WebSocketSyncTest :
         lateinit var tokenBlacklistService: TokenBlacklistService
         lateinit var sessionManager: WebSocketSessionManager
         lateinit var broadcastService: WebSocketBroadcastService
+        lateinit var recurringItemService: RecurringItemService
 
         beforeSpec {
             db = TestDatabaseConfig.init()
@@ -105,6 +108,7 @@ class WebSocketSyncTest :
                     PinnedLists,
                     ItemHistories,
                     Comments,
+                    RecurringItems,
                     RefreshTokens,
                 )
             }
@@ -143,6 +147,7 @@ class WebSocketSyncTest :
             eventBroadcaster = EventBroadcaster(broadcastService)
             refreshTokenService = RefreshTokenService(db)
             tokenBlacklistService = TestValkeyConfig.createNoOpTokenBlacklistService()
+            recurringItemService = RecurringItemService(db)
         }
 
         afterTest {
@@ -151,6 +156,7 @@ class WebSocketSyncTest :
                 ListActivities.deleteAll()
                 PinnedLists.deleteAll()
                 ItemHistories.deleteAll()
+                RecurringItems.deleteAll()
                 ListShares.deleteAll()
                 ListItems.deleteAll()
                 ShoppingLists.deleteAll()
@@ -168,6 +174,7 @@ class WebSocketSyncTest :
                     ListActivities,
                     PinnedLists,
                     ItemHistories,
+                    RecurringItems,
                     ListShares,
                     ListItems,
                     ShoppingLists,
@@ -179,10 +186,17 @@ class WebSocketSyncTest :
             }
         }
 
+        @Suppress("LongMethod")
         fun Application.installTestPlugins() {
             install(WebSockets)
             install(ContentNegotiation) {
-                json(Json { prettyPrint = true; isLenient = true; ignoreUnknownKeys = true })
+                json(
+                    Json {
+                        prettyPrint = true
+                        isLenient = true
+                        ignoreUnknownKeys = true
+                    },
+                )
             }
             install(Authentication) {
                 jwt("auth-jwt") {
@@ -217,6 +231,7 @@ class WebSocketSyncTest :
                     eventBroadcaster,
                     activityService,
                     itemHistoryService,
+                    recurringItemService,
                 )
                 webSocketRoutes(
                     authConfig.jwt,
@@ -289,12 +304,24 @@ class WebSocketSyncTest :
                     val eventJson = Json.parseToJsonElement(eventFrame.readText()).jsonObject
                     eventJson["type"]?.jsonPrimitive?.content shouldBe "item:added"
                     eventJson["listId"]?.jsonPrimitive?.content shouldBe listId
-                    eventJson["item"]?.jsonObject?.get("id")?.jsonPrimitive?.content shouldBe itemId
-                    eventJson["item"]?.jsonObject?.get("name")?.jsonPrimitive?.content shouldBe "Milk"
-                    eventJson["item"]?.jsonObject?.get("isChecked")
+                    eventJson["item"]
+                        ?.jsonObject
+                        ?.get("id")
+                        ?.jsonPrimitive
+                        ?.content shouldBe itemId
+                    eventJson["item"]
+                        ?.jsonObject
+                        ?.get("name")
+                        ?.jsonPrimitive
+                        ?.content shouldBe "Milk"
+                    eventJson["item"]
+                        ?.jsonObject
+                        ?.get("isChecked")
                         ?.jsonPrimitive
                         ?.content shouldBe "false"
-                    eventJson["actor"]?.jsonObject?.get("displayName")
+                    eventJson["actor"]
+                        ?.jsonObject
+                        ?.get("displayName")
                         ?.jsonPrimitive
                         ?.content shouldBe "Test User"
                 }
@@ -361,7 +388,9 @@ class WebSocketSyncTest :
                     eventJson["listId"]?.jsonPrimitive?.content shouldBe listId
                     eventJson["itemId"]?.jsonPrimitive?.content shouldBe itemId
                     eventJson["isChecked"]?.jsonPrimitive?.content shouldBe "true"
-                    eventJson["actor"]?.jsonObject?.get("displayName")
+                    eventJson["actor"]
+                        ?.jsonObject
+                        ?.get("displayName")
                         ?.jsonPrimitive
                         ?.content shouldBe "Test User"
                 }
@@ -427,7 +456,9 @@ class WebSocketSyncTest :
                     eventJson["type"]?.jsonPrimitive?.content shouldBe "item:removed"
                     eventJson["listId"]?.jsonPrimitive?.content shouldBe listId
                     eventJson["itemId"]?.jsonPrimitive?.content shouldBe itemId
-                    eventJson["actor"]?.jsonObject?.get("displayName")
+                    eventJson["actor"]
+                        ?.jsonObject
+                        ?.get("displayName")
                         ?.jsonPrimitive
                         ?.content shouldBe "Test User"
                 }
@@ -503,13 +534,19 @@ class WebSocketSyncTest :
                     val eventJson = Json.parseToJsonElement(eventFrame.readText()).jsonObject
                     eventJson["type"]?.jsonPrimitive?.content shouldBe "item:added"
                     eventJson["listId"]?.jsonPrimitive?.content shouldBe listId
-                    eventJson["item"]?.jsonObject?.get("id")
+                    eventJson["item"]
+                        ?.jsonObject
+                        ?.get("id")
                         ?.jsonPrimitive
                         ?.content shouldBe itemId
-                    eventJson["item"]?.jsonObject?.get("name")
+                    eventJson["item"]
+                        ?.jsonObject
+                        ?.get("name")
                         ?.jsonPrimitive
                         ?.content shouldBe "Shared Item"
-                    eventJson["actor"]?.jsonObject?.get("displayName")
+                    eventJson["actor"]
+                        ?.jsonObject
+                        ?.get("displayName")
                         ?.jsonPrimitive
                         ?.content shouldBe "User A"
                 }

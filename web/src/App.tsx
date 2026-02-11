@@ -9,9 +9,11 @@ import {
   connectWebSocket,
   disconnectWebSocket,
   setCurrentUserId,
+  setToastCallback,
 } from './services/websocketBridge';
 import { apiFetch } from './services/api';
 import useTheme from './hooks/useTheme';
+import { useToast } from './components/common';
 import { AuthCallback, ProtectedRoute } from './components/auth';
 import { MainLayout } from './components/layout';
 import {
@@ -75,6 +77,13 @@ function AppRoutes() {
         });
     }
   }, [dispatch]);
+
+  // Wire up toast notifications for the WebSocket bridge
+  const { showToast } = useToast();
+  useEffect(() => {
+    setToastCallback((message: string) => showToast({ message }));
+    return () => setToastCallback(null);
+  }, [showToast]);
 
   // Initialize WebSocket bridge and manage connection based on auth state
   useEffect(() => {

@@ -11,6 +11,7 @@ import no.shoppinglist.domain.HouseholdMemberships
 import no.shoppinglist.domain.Households
 import no.shoppinglist.domain.ListItems
 import no.shoppinglist.domain.ListShares
+import no.shoppinglist.domain.RecurringItems
 import no.shoppinglist.domain.SharePermission
 import no.shoppinglist.domain.ShareType
 import no.shoppinglist.domain.ShoppingLists
@@ -32,7 +33,15 @@ class ListShareServiceTest :
         beforeSpec {
             db = TestDatabaseConfig.init()
             transaction(db) {
-                SchemaUtils.create(Accounts, Households, HouseholdMemberships, ShoppingLists, ListItems, ListShares)
+                SchemaUtils.create(
+                    Accounts,
+                    Households,
+                    HouseholdMemberships,
+                    ShoppingLists,
+                    RecurringItems,
+                    ListItems,
+                    ListShares,
+                )
             }
             service = ListShareService(db)
             listService = ShoppingListService(db)
@@ -59,7 +68,15 @@ class ListShareServiceTest :
 
         afterSpec {
             transaction(db) {
-                SchemaUtils.drop(ListShares, ListItems, ShoppingLists, HouseholdMemberships, Households, Accounts)
+                SchemaUtils.drop(
+                    ListShares,
+                    ListItems,
+                    RecurringItems,
+                    ShoppingLists,
+                    HouseholdMemberships,
+                    Households,
+                    Accounts,
+                )
             }
         }
 

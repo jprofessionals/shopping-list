@@ -6,6 +6,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import no.shoppinglist.config.TestDatabaseConfig
+import no.shoppinglist.domain.RecurringItems
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -25,7 +26,7 @@ class ListItemTest :
             listId = UUID.randomUUID()
 
             transaction(db) {
-                SchemaUtils.create(Accounts, Households, HouseholdMemberships, ShoppingLists, ListItems)
+                SchemaUtils.create(Accounts, Households, HouseholdMemberships, ShoppingLists, RecurringItems, ListItems)
 
                 Account.new(accountId) {
                     email = "test@example.com"
@@ -46,7 +47,7 @@ class ListItemTest :
 
         afterSpec {
             transaction(db) {
-                SchemaUtils.drop(ListItems, ShoppingLists, HouseholdMemberships, Households, Accounts)
+                SchemaUtils.drop(ListItems, RecurringItems, ShoppingLists, HouseholdMemberships, Households, Accounts)
             }
         }
 

@@ -14,6 +14,7 @@ test.describe('Connection Status', () => {
         displayName: 'Connection Test User',
       },
     });
+    expect(registerResponse.ok(), `Register failed: ${registerResponse.status()}`).toBeTruthy();
     const { token } = await registerResponse.json();
 
     // Set token and navigate

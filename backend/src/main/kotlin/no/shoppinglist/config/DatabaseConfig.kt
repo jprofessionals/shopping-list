@@ -18,6 +18,7 @@ import no.shoppinglist.domain.ShoppingLists
 import no.shoppinglist.domain.UserPreferencesTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object DatabaseConfig {
@@ -58,9 +59,35 @@ object DatabaseConfig {
                 RefreshTokens,
             )
 
-            // Enable pg_trgm extension for fuzzy search (used by item autocomplete)
+            runMigrations()
+
             exec("CREATE EXTENSION IF NOT EXISTS pg_trgm")
         }
+    }
+
+    private fun Transaction.runMigrations() {
+        // Migration: recurring_items schema changed from list-based to household-based.
+        // SchemaUtils doesn't drop removed columns, so clean them up manually.
+        exec(
+            """
+            DO ${'$'}${'$'}
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'recurring_items' AND column_name = 'list_id'
+                ) THEN
+                    ALTER TABLE recurring_items DROP COLUMN list_id;
+                END IF;
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'recurring_items' AND column_name = 'next_occurrence'
+                ) THEN
+                    ALTER TABLE recurring_items DROP COLUMN next_occurrence;
+                END IF;
+            END
+            ${'$'}${'$'};
+            """.trimIndent(),
+        )
     }
 
     fun getDatabase(): Database = database ?: throw IllegalStateException("Database not initialized")

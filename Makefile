@@ -1,4 +1,4 @@
-.PHONY: dev backend frontend db test test-backend test-frontend test-e2e test-e2e-ui test-e2e-headed lint build clean install help test-mobile build-mobile lint-mobile
+.PHONY: dev backend frontend db test test-backend test-frontend test-e2e test-e2e-ui test-e2e-headed lint build clean install help test-mobile build-mobile lint-mobile setup
 
 # Start everything (database + backend + frontend)
 dev: db
@@ -58,6 +58,11 @@ install:
 clean:
 	cd backend && ./gradlew clean
 	cd web && rm -rf dist node_modules/.vite
+
+# Setup git hooks
+setup:
+	git config core.hooksPath .githooks
+	@echo "Git hooks configured (using .githooks/)"
 
 # Help
 help:

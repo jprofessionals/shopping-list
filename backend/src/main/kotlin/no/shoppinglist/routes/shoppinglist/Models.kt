@@ -54,6 +54,7 @@ data class ItemResponse(
     val isChecked: Boolean,
     val checkedByName: String?,
     val createdAt: String,
+    val recurringItemId: String? = null,
 )
 
 @Serializable
@@ -119,6 +120,7 @@ internal fun ListItem.toResponse() =
         isChecked = isChecked,
         checkedByName = checkedBy?.displayName,
         createdAt = createdAt.toString(),
+        recurringItemId = recurringItem?.id?.value?.toString(),
     )
 
 internal fun ListShare.toResponse() =

@@ -315,6 +315,30 @@
       "daysAgo": "{{count}}a ang nakalipas"
     }
   },
+  "recurring": {
+    "title": "Mga Regular na Item",
+    "addItem": "Magdagdag ng Item",
+    "editItem": "I-edit ang Item",
+    "newItem": "Bagong Regular na Item",
+    "noItems": "Wala pang mga regular na item. Magdagdag ng mga item na dapat bilhin nang regular.",
+    "frequency": "Dalas",
+    "frequencyDaily": "Araw-araw",
+    "frequencyWeekly": "Lingguhan",
+    "frequencyBiweekly": "Tuwing dalawang linggo",
+    "frequencyMonthly": "Buwanan",
+    "lastPurchased": "huling binili {{date}}",
+    "paused": "Naka-pause",
+    "pausedUntilDate": "Naka-pause hanggang {{date}}",
+    "pause": "I-pause",
+    "resume": "Ituloy",
+    "edit": "I-edit",
+    "pauseTitle": "I-pause ang Regular na Item",
+    "pauseUntilLabel": "I-pause hanggang (opsyonal)",
+    "pauseUntilHint": "Iwanan na walang laman para i-pause nang walang takdang panahon",
+    "confirmDelete": "Burahin ang regular na item?",
+    "confirmDeleteDescription": "Ang item na ito ay permanenteng matatanggal at hindi na gagawa ng mga listahan ng bilihin.",
+    "autoListCreated": "Bagong listahan ng bilihin na ginawa: {{name}}"
+  },
   "app": {
     "shoppingList": "Listahan ng Bilihin"
   }

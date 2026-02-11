@@ -16,6 +16,7 @@ test.describe('Shopping Lists', () => {
         displayName: 'List Test User',
       },
     });
+    expect(registerResponse.ok(), `Register failed: ${registerResponse.status()}`).toBeTruthy();
     const { token } = await registerResponse.json();
     authToken = token;
 

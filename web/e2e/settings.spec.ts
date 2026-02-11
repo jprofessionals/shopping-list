@@ -18,6 +18,7 @@ test.describe('Settings Page', () => {
         displayName: testDisplayName,
       },
     });
+    expect(registerResponse.ok(), `Register failed: ${registerResponse.status()}`).toBeTruthy();
     const { token } = await registerResponse.json();
     authToken = token;
 

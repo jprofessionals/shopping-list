@@ -17,6 +17,7 @@ test.describe('Households', () => {
         displayName: 'Household Test User',
       },
     });
+    expect(registerResponse.ok(), `Register failed: ${registerResponse.status()}`).toBeTruthy();
     const { token } = await registerResponse.json();
     authToken = token;
 

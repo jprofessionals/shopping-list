@@ -15,6 +15,7 @@ test.describe('Comments on Lists', () => {
         displayName: 'Comment Test User',
       },
     });
+    expect(registerResponse.ok(), `Register failed: ${registerResponse.status()}`).toBeTruthy();
     const { token } = await registerResponse.json();
 
     // Create a list via API
@@ -69,16 +70,20 @@ test.describe('Comments on Lists', () => {
     // Click Edit button
     await page.getByRole('button', { name: 'Edit' }).click();
 
-    // Modify the text in the edit input (find the input next to the Save button)
+    // Modify the text in the edit input
     const updatedText = `Edited comment ${Date.now()}`;
     const saveButton = page.getByRole('button', { name: 'Save' });
     await expect(saveButton).toBeVisible({ timeout: 5000 });
     const editInput = saveButton.locator('..').locator('input[type="text"]');
-    await editInput.clear();
     await editInput.fill(updatedText);
 
-    // Click Save
-    await saveButton.click();
+    // Click Save and wait for the API call to complete
+    await Promise.all([
+      page.waitForResponse(
+        (resp) => resp.url().includes('/comments/') && resp.request().method() === 'PATCH'
+      ),
+      saveButton.click(),
+    ]);
 
     // Verify updated text and edited label
     await expect(page.getByText(updatedText)).toBeVisible({ timeout: 10000 });
@@ -121,6 +126,7 @@ test.describe('Comments on Households', () => {
         displayName: 'HH Comment User',
       },
     });
+    expect(registerResponse.ok(), `Register failed: ${registerResponse.status()}`).toBeTruthy();
     const { token: authToken } = await registerResponse.json();
 
     // Create a household via API

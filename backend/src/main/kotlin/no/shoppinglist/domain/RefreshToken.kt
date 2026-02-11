@@ -14,7 +14,9 @@ object RefreshTokens : UUIDTable("refresh_tokens") {
     val createdAt = timestamp("created_at")
 }
 
-class RefreshToken(id: EntityID<UUID>) : UUIDEntity(id) {
+class RefreshToken(
+    id: EntityID<UUID>,
+) : UUIDEntity(id) {
     companion object : UUIDEntityClass<RefreshToken>(RefreshTokens)
 
     var accountId by RefreshTokens.accountId

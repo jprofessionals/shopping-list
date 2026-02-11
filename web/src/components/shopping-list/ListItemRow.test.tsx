@@ -75,6 +75,23 @@ describe('ListItemRow', () => {
     expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();
   });
 
+  describe('Recurring badge', () => {
+    it('shows recurring badge when item has recurringItemId', () => {
+      render(
+        <ListItemRow {...defaultProps} item={createMockItem({ recurringItemId: 'rec-1' })} />,
+        { store: createTestStore() }
+      );
+
+      expect(screen.getByTestId('recurring-badge')).toBeInTheDocument();
+    });
+
+    it('does not show recurring badge for regular items', () => {
+      render(<ListItemRow {...defaultProps} />, { store: createTestStore() });
+
+      expect(screen.queryByTestId('recurring-badge')).not.toBeInTheDocument();
+    });
+  });
+
   describe('Quantity Stepper', () => {
     it('stepper is hidden by default', () => {
       render(<ListItemRow {...defaultProps} />, { store: createTestStore() });
