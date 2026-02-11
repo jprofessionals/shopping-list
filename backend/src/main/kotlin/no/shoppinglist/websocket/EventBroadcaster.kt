@@ -11,6 +11,7 @@ import no.shoppinglist.domain.ShoppingList
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.UUID
 
+@Suppress("TooManyFunctions")
 class EventBroadcaster(
     private val broadcastService: WebSocketBroadcastService,
 ) {
@@ -110,18 +111,38 @@ class EventBroadcaster(
         actorId: UUID,
     ) {
         scope.launch {
-            val event =
+            val (event, householdId) =
                 transaction {
                     val actor = Account.findById(actorId) ?: return@transaction null
-                    ListCreatedEvent(
-                        list = list.toListData(),
-                        actor = actor.toActorInfo(),
-                    )
+                    val event =
+                        ListCreatedEvent(
+                            list = list.toListData(),
+                            actor = actor.toActorInfo(),
+                        )
+                    val hId = list.household?.id?.value
+                    event to hId
                 } ?: return@launch
 
-            // Broadcast to all household members if household list
-            @Suppress("UNUSED_VARIABLE")
-            val householdId = transaction { list.household?.id?.value }
+            if (householdId != null) {
+                broadcastService.broadcastToHousehold(householdId, event)
+            }
+        }
+    }
+
+    fun broadcastListCreatedBySystem(
+        list: ShoppingList,
+        householdId: UUID,
+    ) {
+        scope.launch {
+            val event =
+                transaction {
+                    ListCreatedEvent(
+                        list = list.toListData(),
+                        actor = ActorInfo(id = "system", displayName = "System"),
+                    )
+                }
+
+            broadcastService.broadcastToHousehold(householdId, event)
         }
     }
 

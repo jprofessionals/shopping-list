@@ -9,9 +9,11 @@ import no.shoppinglist.service.ItemHistoryService
 import no.shoppinglist.service.ListItemService
 import no.shoppinglist.service.ListShareService
 import no.shoppinglist.service.PinnedListService
+import no.shoppinglist.service.RecurringItemService
 import no.shoppinglist.service.ShoppingListService
 import no.shoppinglist.websocket.EventBroadcaster
 
+@Suppress("LongParameterList")
 fun Route.shoppingListRoutes(
     shoppingListService: ShoppingListService,
     listItemService: ListItemService,
@@ -21,6 +23,7 @@ fun Route.shoppingListRoutes(
     eventBroadcaster: EventBroadcaster,
     activityService: ActivityService,
     itemHistoryService: ItemHistoryService,
+    recurringItemService: RecurringItemService,
 ) {
     authenticate("auth-jwt") {
         route("/lists") {
@@ -33,6 +36,7 @@ fun Route.shoppingListRoutes(
                     eventBroadcaster,
                     activityService,
                     itemHistoryService,
+                    recurringItemService,
                 )
                 listSharingRoutes(shoppingListService, listShareService)
             }

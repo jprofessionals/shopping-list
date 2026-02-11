@@ -37,14 +37,16 @@ import no.shoppinglist.domain.Accounts
 import no.shoppinglist.domain.Comments
 import no.shoppinglist.domain.HouseholdMemberships
 import no.shoppinglist.domain.Households
+import no.shoppinglist.domain.RecurringItems
 import no.shoppinglist.domain.RefreshTokens
 import no.shoppinglist.routes.auth.authRoutes
-import no.shoppinglist.service.RefreshTokenService
-import no.shoppinglist.service.TokenBlacklistService
 import no.shoppinglist.routes.household.householdRoutes
 import no.shoppinglist.service.AccountService
 import no.shoppinglist.service.HouseholdService
 import no.shoppinglist.service.JwtService
+import no.shoppinglist.service.RecurringItemService
+import no.shoppinglist.service.RefreshTokenService
+import no.shoppinglist.service.TokenBlacklistService
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.deleteAll
@@ -59,11 +61,12 @@ class HouseholdRoutesTest :
         lateinit var authConfig: AuthConfig
         lateinit var refreshTokenService: RefreshTokenService
         lateinit var tokenBlacklistService: TokenBlacklistService
+        lateinit var recurringItemService: RecurringItemService
 
         beforeSpec {
             db = TestDatabaseConfig.init()
             transaction(db) {
-                SchemaUtils.create(Accounts, Households, HouseholdMemberships, Comments, RefreshTokens)
+                SchemaUtils.create(Accounts, Households, HouseholdMemberships, Comments, RecurringItems, RefreshTokens)
             }
             authConfig =
                 AuthConfig(
@@ -89,11 +92,13 @@ class HouseholdRoutesTest :
             jwtService = JwtService(authConfig.jwt)
             refreshTokenService = RefreshTokenService(db)
             tokenBlacklistService = TestValkeyConfig.createNoOpTokenBlacklistService()
+            recurringItemService = RecurringItemService(db)
         }
 
         afterTest {
             transaction(db) {
                 Comments.deleteAll()
+                RecurringItems.deleteAll()
                 RefreshTokens.deleteAll()
                 HouseholdMemberships.deleteAll()
                 Households.deleteAll()
@@ -103,7 +108,7 @@ class HouseholdRoutesTest :
 
         afterSpec {
             transaction(db) {
-                SchemaUtils.drop(Comments, RefreshTokens, HouseholdMemberships, Households, Accounts)
+                SchemaUtils.drop(Comments, RecurringItems, RefreshTokens, HouseholdMemberships, Households, Accounts)
             }
         }
 
@@ -146,7 +151,7 @@ class HouseholdRoutesTest :
             configureAuthentication(app)
             app.routing {
                 authRoutes(authConfig, accountService, jwtService, refreshTokenService, tokenBlacklistService)
-                householdRoutes(householdService, accountService)
+                householdRoutes(householdService, accountService, recurringItemService)
             }
         }
 

@@ -10,6 +10,7 @@ import {
   cleanupWebSocketBridge,
   setCurrentUserId,
   getCurrentUserId,
+  setToastCallback,
   connectWebSocket,
   disconnectWebSocket,
   subscribeToLists,
@@ -485,6 +486,81 @@ describe('websocketBridge', () => {
       expect(lists).toHaveLength(1);
       expect(lists[0].name).toBe('Groceries');
       expect(lists[0].isOwner).toBe(false);
+    });
+
+    it('should show toast for system-created list', () => {
+      const store = createTestStore({
+        lists: {
+          items: [],
+          currentListId: null,
+          currentListItems: [],
+          isLoading: false,
+          error: null,
+        },
+      } as Partial<RootState>);
+
+      const toastFn = vi.fn();
+      setToastCallback(toastFn);
+
+      initWebSocketBridge(store.dispatch, store.getState);
+
+      const wsService = getWebSocketService();
+      wsService.connect('test-token');
+      MockWebSocket.instances[0].simulateOpen();
+
+      MockWebSocket.instances[0].simulateMessage({
+        type: 'list:created',
+        list: {
+          id: 'list-auto',
+          name: 'Recurring - Feb 11',
+          householdId: 'household-1',
+          isPersonal: false,
+        },
+        actor: { id: 'system', displayName: 'System' },
+        timestamp: '2024-01-01T00:00:00Z',
+      });
+
+      expect(toastFn).toHaveBeenCalledTimes(1);
+      expect(toastFn).toHaveBeenCalledWith(expect.stringContaining('Recurring - Feb 11'));
+
+      setToastCallback(null);
+    });
+
+    it('should not show toast for user-created list', () => {
+      const store = createTestStore({
+        lists: {
+          items: [],
+          currentListId: null,
+          currentListItems: [],
+          isLoading: false,
+          error: null,
+        },
+      } as Partial<RootState>);
+
+      const toastFn = vi.fn();
+      setToastCallback(toastFn);
+
+      initWebSocketBridge(store.dispatch, store.getState);
+
+      const wsService = getWebSocketService();
+      wsService.connect('test-token');
+      MockWebSocket.instances[0].simulateOpen();
+
+      MockWebSocket.instances[0].simulateMessage({
+        type: 'list:created',
+        list: {
+          id: 'list-1',
+          name: 'My List',
+          householdId: 'household-1',
+          isPersonal: false,
+        },
+        actor: { id: 'user-1', displayName: 'A User' },
+        timestamp: '2024-01-01T00:00:00Z',
+      });
+
+      expect(toastFn).not.toHaveBeenCalled();
+
+      setToastCallback(null);
     });
 
     it('should handle list:updated event', () => {

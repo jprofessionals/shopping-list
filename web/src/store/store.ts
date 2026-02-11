@@ -4,6 +4,7 @@ import householdsReducer from './householdsSlice';
 import listsReducer from './listsSlice';
 import websocketReducer from './websocketSlice';
 import commentsReducer from './commentsSlice';
+import recurringItemsReducer from './recurringItemsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     lists: listsReducer,
     websocket: websocketReducer,
     comments: commentsReducer,
+    recurringItems: recurringItemsReducer,
   },
 });
 

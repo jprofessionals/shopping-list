@@ -3,6 +3,7 @@ package no.shoppinglist.service
 import no.shoppinglist.domain.Account
 import no.shoppinglist.domain.ListItem
 import no.shoppinglist.domain.ListItems
+import no.shoppinglist.domain.RecurringItem
 import no.shoppinglist.domain.ShoppingList
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -41,6 +42,41 @@ class ListItemService(
                 this.isChecked = false
                 this.checkedBy = null
                 this.createdBy = createdBy
+                this.createdAt = now
+                this.updatedAt = now
+            }
+        }
+
+    fun createFromRecurring(
+        listId: UUID,
+        name: String,
+        quantity: Double,
+        unit: String?,
+        createdById: UUID,
+        recurringItemId: UUID,
+    ): ListItem =
+        transaction(db) {
+            val list =
+                ShoppingList.findById(listId)
+                    ?: throw IllegalArgumentException("List not found: $listId")
+            val createdBy =
+                Account.findById(createdById)
+                    ?: throw IllegalArgumentException("Account not found: $createdById")
+            val recurring =
+                RecurringItem.findById(recurringItemId)
+                    ?: throw IllegalArgumentException("Recurring item not found: $recurringItemId")
+            val now = Instant.now()
+
+            ListItem.new {
+                this.list = list
+                this.name = name
+                this.quantity = quantity
+                this.unit = unit
+                this.barcode = null
+                this.isChecked = false
+                this.checkedBy = null
+                this.createdBy = createdBy
+                this.recurringItem = recurring
                 this.createdAt = now
                 this.updatedAt = now
             }

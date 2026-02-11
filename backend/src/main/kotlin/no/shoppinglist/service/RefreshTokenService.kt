@@ -29,7 +29,9 @@ class RefreshTokenService(
         transaction(db) {
             val rawToken = UUID.randomUUID().toString()
             RefreshToken.new {
-                this.accountId = org.jetbrains.exposed.dao.id.EntityID(accountId, no.shoppinglist.domain.Accounts)
+                this.accountId =
+                    org.jetbrains.exposed.dao.id
+                        .EntityID(accountId, no.shoppinglist.domain.Accounts)
                 this.tokenHash = hashToken(rawToken)
                 this.expiresAt = Instant.now().plus(REFRESH_TOKEN_DAYS, ChronoUnit.DAYS)
                 this.createdAt = Instant.now()
@@ -41,10 +43,11 @@ class RefreshTokenService(
         transaction(db) {
             val hash = hashToken(rawToken)
             val token =
-                RefreshToken.find {
-                    (RefreshTokens.tokenHash eq hash) and
-                        (RefreshTokens.expiresAt greater Instant.now())
-                }.firstOrNull()
+                RefreshToken
+                    .find {
+                        (RefreshTokens.tokenHash eq hash) and
+                            (RefreshTokens.expiresAt greater Instant.now())
+                    }.firstOrNull()
             token?.accountId?.value
         }
 
@@ -57,10 +60,11 @@ class RefreshTokenService(
             transaction(db) {
                 val hash = hashToken(oldRawToken)
                 val existing =
-                    RefreshToken.find {
-                        (RefreshTokens.tokenHash eq hash) and
-                            (RefreshTokens.expiresAt greater Instant.now())
-                    }.firstOrNull()
+                    RefreshToken
+                        .find {
+                            (RefreshTokens.tokenHash eq hash) and
+                                (RefreshTokens.expiresAt greater Instant.now())
+                        }.firstOrNull()
 
                 if (existing == null || existing.accountId.value != accountId) {
                     return@transaction null
@@ -70,7 +74,9 @@ class RefreshTokenService(
 
                 val newRawToken = UUID.randomUUID().toString()
                 RefreshToken.new {
-                    this.accountId = org.jetbrains.exposed.dao.id.EntityID(accountId, no.shoppinglist.domain.Accounts)
+                    this.accountId =
+                        org.jetbrains.exposed.dao.id
+                            .EntityID(accountId, no.shoppinglist.domain.Accounts)
                     this.tokenHash = hashToken(newRawToken)
                     this.expiresAt = Instant.now().plus(REFRESH_TOKEN_DAYS, ChronoUnit.DAYS)
                     this.createdAt = Instant.now()
@@ -93,10 +99,11 @@ class RefreshTokenService(
     fun deleteAllForAccount(accountId: UUID) {
         transaction(db) {
             RefreshTokens.deleteWhere {
-                RefreshTokens.accountId eq org.jetbrains.exposed.dao.id.EntityID(
-                    accountId,
-                    no.shoppinglist.domain.Accounts,
-                )
+                RefreshTokens.accountId eq
+                    org.jetbrains.exposed.dao.id.EntityID(
+                        accountId,
+                        no.shoppinglist.domain.Accounts,
+                    )
             }
         }
     }

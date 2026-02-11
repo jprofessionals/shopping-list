@@ -6,6 +6,7 @@ import { removeHousehold } from '../../store/householdsSlice';
 import { LoadingSpinner, ErrorAlert, Badge } from '../common';
 import { apiFetch } from '../../services/api';
 import CommentFeed from '../comments/CommentFeed';
+import { RecurringItemsList } from '../recurring';
 
 interface Member {
   accountId: string;
@@ -331,6 +332,8 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
           ))}
         </ul>
       </div>
+
+      <RecurringItemsList householdId={householdId} />
 
       <div className="mt-6">
         <CommentFeed targetType="HOUSEHOLD" targetId={householdId} />

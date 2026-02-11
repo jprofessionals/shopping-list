@@ -36,6 +36,7 @@ export interface ListItem {
   isChecked: boolean;
   checkedByName: string | null;
   createdAt: string;
+  recurringItemId?: string | null;
 }
 
 export interface ListsState {

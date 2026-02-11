@@ -31,6 +31,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import no.shoppinglist.config.AuthConfig
 import no.shoppinglist.config.DatabaseConfig
+import no.shoppinglist.config.RecurringConfig
 import no.shoppinglist.config.ValkeyConfig
 import no.shoppinglist.routes.activityRoutes
 import no.shoppinglist.routes.asyncApiRoutes
@@ -53,6 +54,8 @@ import no.shoppinglist.service.ListItemService
 import no.shoppinglist.service.ListShareService
 import no.shoppinglist.service.PinnedListService
 import no.shoppinglist.service.PreferencesService
+import no.shoppinglist.service.RecurringItemService
+import no.shoppinglist.service.RecurringScheduler
 import no.shoppinglist.service.RefreshTokenService
 import no.shoppinglist.service.ShoppingListService
 import no.shoppinglist.service.TokenBlacklistService
@@ -81,19 +84,39 @@ fun Application.module() {
     val refreshTokenService = RefreshTokenService(DatabaseConfig.getDatabase())
     val sessionManager = WebSocketSessionManager()
     val broadcastService = WebSocketBroadcastService(valkeyService, sessionManager)
+    val eventBroadcaster = EventBroadcaster(broadcastService)
+    val recurringScheduler = createRecurringScheduler(services, eventBroadcaster)
 
-    configureShutdownHooks(refreshTokenService, valkeyService)
+    configureShutdownHooks(refreshTokenService, valkeyService, recurringScheduler)
     configureRouting(
         authConfig,
         jwtService,
         services,
         sessionManager,
-        EventBroadcaster(broadcastService),
+        eventBroadcaster,
         refreshTokenService,
         tokenBlacklistService,
         broadcastService,
         valkeyService,
     )
+}
+
+private fun Application.createRecurringScheduler(
+    services: Services,
+    eventBroadcaster: EventBroadcaster,
+): RecurringScheduler {
+    val recurringConfig = RecurringConfig.fromApplicationConfig(environment.config)
+    val scheduler =
+        RecurringScheduler(
+            config = recurringConfig,
+            recurringItemService = services.recurringItemService,
+            shoppingListService = services.shoppingListService,
+            listItemService = services.listItemService,
+            eventBroadcaster = eventBroadcaster,
+            db = DatabaseConfig.getDatabase(),
+        )
+    scheduler.start()
+    return scheduler
 }
 
 private data class Services(
@@ -107,6 +130,7 @@ private data class Services(
     val itemHistoryService: ItemHistoryService,
     val preferencesService: PreferencesService,
     val commentService: CommentService,
+    val recurringItemService: RecurringItemService,
 )
 
 private fun createServices(): Services {
@@ -122,6 +146,7 @@ private fun createServices(): Services {
         itemHistoryService = ItemHistoryService(db),
         preferencesService = PreferencesService(db),
         commentService = CommentService(db),
+        recurringItemService = RecurringItemService(db),
     )
 }
 
@@ -203,6 +228,7 @@ private fun Application.configureAuthentication(
 private fun Application.configureShutdownHooks(
     refreshTokenService: RefreshTokenService,
     valkeyService: ValkeyService,
+    recurringScheduler: RecurringScheduler,
 ) {
     val cleanupJob =
         CoroutineScope(Dispatchers.Default).launch {
@@ -213,6 +239,7 @@ private fun Application.configureShutdownHooks(
         }
     monitor.subscribe(ApplicationStopped) {
         cleanupJob.cancel()
+        recurringScheduler.stop()
         valkeyService.shutdown()
     }
 }
@@ -246,7 +273,7 @@ private fun Application.configureRouting(
                 broadcastService,
             )
             authRoutes(authConfig, services.accountService, jwtService, refreshTokenService, tokenBlacklistService)
-            householdRoutes(services.householdService, services.accountService)
+            householdRoutes(services.householdService, services.accountService, services.recurringItemService)
             configureListRoutes(services, eventBroadcaster)
             sharedAccessRoutes(services.listShareService, services.listItemService)
             activityRoutes(services.activityService, services.shoppingListService)
@@ -272,5 +299,6 @@ private fun io.ktor.server.routing.Route.configureListRoutes(
         eventBroadcaster,
         services.activityService,
         services.itemHistoryService,
+        services.recurringItemService,
     )
 }

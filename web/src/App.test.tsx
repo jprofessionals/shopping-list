@@ -8,6 +8,7 @@ import authReducer from './store/authSlice';
 import householdsReducer from './store/householdsSlice';
 import listsReducer from './store/listsSlice';
 import websocketReducer from './store/websocketSlice';
+import { ToastProvider } from './components/common';
 import i18nForTests from './test/i18nForTests';
 
 const createTestStore = (preloadedState = {}) =>
@@ -47,7 +48,9 @@ describe('App', () => {
     render(
       <I18nextProvider i18n={i18nForTests}>
         <Provider store={createTestStore()}>
-          <App />
+          <ToastProvider>
+            <App />
+          </ToastProvider>
         </Provider>
       </I18nextProvider>
     );

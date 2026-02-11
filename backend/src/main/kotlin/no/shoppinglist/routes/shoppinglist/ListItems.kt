@@ -15,16 +15,19 @@ import no.shoppinglist.routes.uuidParam
 import no.shoppinglist.service.ActivityService
 import no.shoppinglist.service.ItemHistoryService
 import no.shoppinglist.service.ListItemService
+import no.shoppinglist.service.RecurringItemService
 import no.shoppinglist.service.ShoppingListService
 import no.shoppinglist.websocket.EventBroadcaster
 import org.jetbrains.exposed.sql.transactions.transaction
 
+@Suppress("LongParameterList")
 internal fun Route.listItemRoutes(
     shoppingListService: ShoppingListService,
     listItemService: ListItemService,
     eventBroadcaster: EventBroadcaster,
     activityService: ActivityService,
     itemHistoryService: ItemHistoryService,
+    recurringItemService: RecurringItemService,
 ) {
     route("/items") {
         addItemRoute(shoppingListService, listItemService, eventBroadcaster, activityService, itemHistoryService)
@@ -33,7 +36,13 @@ internal fun Route.listItemRoutes(
         route("/{itemId}") {
             updateItemRoute(shoppingListService, listItemService, eventBroadcaster, activityService)
             deleteItemRoute(shoppingListService, listItemService, eventBroadcaster, activityService)
-            checkItemRoute(shoppingListService, listItemService, eventBroadcaster, activityService)
+            checkItemRoute(
+                shoppingListService,
+                listItemService,
+                eventBroadcaster,
+                activityService,
+                recurringItemService,
+            )
         }
     }
 }
@@ -197,6 +206,7 @@ private fun Route.checkItemRoute(
     listItemService: ListItemService,
     eventBroadcaster: EventBroadcaster,
     activityService: ActivityService,
+    recurringItemService: RecurringItemService,
 ) {
     post("/check") {
         val accountId =
@@ -217,6 +227,14 @@ private fun Route.checkItemRoute(
         val toggled =
             listItemService.toggleCheck(itemId, accountId)
                 ?: return@post call.respond(HttpStatusCode.NotFound)
+
+        // Update lastPurchased on the recurring item when checked
+        if (toggled.isChecked) {
+            val recurringItemId = transaction { toggled.recurringItem?.id?.value }
+            if (recurringItemId != null) {
+                recurringItemService.markPurchased(recurringItemId)
+            }
+        }
 
         val activityType = if (toggled.isChecked) ActivityType.ITEM_CHECKED else ActivityType.ITEM_UNCHECKED
         activityService.recordActivity(listId, accountId, activityType, toggled.name)

@@ -317,6 +317,29 @@
       "daysAgo": "{{count}}b árat"
     }
   },
+  "recurring": {
+    "title": "Fásta gálvvut",
+    "addItem": "Lasit gálvu",
+    "editItem": "Rievdat gálvu",
+    "newItem": "Ođđa fásta gálvu",
+    "noItems": "Eai leat fásta gálvvut vel. Lasit gálvvuid mat galget oastojuvvot jeavddalaččat.",
+    "frequency": "Dávjodaga",
+    "frequencyDaily": "Beaivválaččat",
+    "frequencyWeekly": "Vahkkulaččat",
+    "frequencyBiweekly": "Nuppe vahku",
+    "frequencyMonthly": "Mánnodaččat",
+    "lastPurchased": "maŋimuš oastán {{date}}",
+    "paused": "Botnjojuvvon",
+    "pausedUntilDate": "Botnjojuvvon {{date}} rádjai",
+    "pause": "Botnjo",
+    "resume": "Joatke",
+    "edit": "Rievdat",
+    "pauseTitle": "Botnjo fásta gálvu",
+    "pauseUntilLabel": "Botnjo rádjai (válljejahkii)",
+    "pauseUntilHint": "Guođe guorusin botnjot bissolaččat",
+    "confirmDelete": "Leatgo sihkar ahte háliidat sihkkut dán fásta gálvu?",
+    "autoListCreated": "Ođđa oastolistu ráhkaduvvon: {{name}}"
+  },
   "app": {
     "shoppingList": "Oastolistu"
   }

@@ -16,6 +16,7 @@ object ListItems : UUIDTable("list_items") {
     val isChecked = bool("is_checked").default(false)
     val checkedBy = reference("checked_by_id", Accounts).nullable()
     val createdBy = reference("created_by_id", Accounts)
+    val recurringItem = reference("recurring_item_id", RecurringItems).nullable()
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
 }
@@ -33,6 +34,7 @@ class ListItem(
     var isChecked by ListItems.isChecked
     var checkedBy by Account optionalReferencedOn ListItems.checkedBy
     var createdBy by Account referencedOn ListItems.createdBy
+    var recurringItem by RecurringItem optionalReferencedOn ListItems.recurringItem
     var createdAt by ListItems.createdAt
     var updatedAt by ListItems.updatedAt
 }

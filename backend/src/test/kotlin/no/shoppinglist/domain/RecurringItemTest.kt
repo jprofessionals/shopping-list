@@ -3,6 +3,7 @@ package no.shoppinglist.domain
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import no.shoppinglist.config.TestDatabaseConfig
@@ -18,12 +19,12 @@ class RecurringItemTest :
 
         lateinit var db: Database
         lateinit var accountId: UUID
-        lateinit var listId: UUID
+        lateinit var householdId: UUID
 
         beforeSpec {
             db = TestDatabaseConfig.init()
             accountId = UUID.randomUUID()
-            listId = UUID.randomUUID()
+            householdId = UUID.randomUUID()
 
             transaction(db) {
                 SchemaUtils.create(
@@ -31,9 +32,9 @@ class RecurringItemTest :
                     Households,
                     HouseholdMemberships,
                     ShoppingLists,
+                    RecurringItems,
                     ListItems,
                     ListShares,
-                    RecurringItems,
                 )
 
                 Account.new(accountId) {
@@ -43,11 +44,8 @@ class RecurringItemTest :
                     createdAt = Instant.now()
                 }
 
-                ShoppingList.new(listId) {
-                    name = "Weekly Groceries"
-                    owner = Account[accountId]
-                    household = null
-                    isPersonal = true
+                Household.new(householdId) {
+                    name = "Test Household"
                     createdAt = Instant.now()
                 }
             }
@@ -56,9 +54,9 @@ class RecurringItemTest :
         afterSpec {
             transaction(db) {
                 SchemaUtils.drop(
-                    RecurringItems,
                     ListShares,
                     ListItems,
+                    RecurringItems,
                     ShoppingLists,
                     HouseholdMemberships,
                     Households,
@@ -69,17 +67,17 @@ class RecurringItemTest :
 
         test("can create weekly recurring item") {
             val recurringId = UUID.randomUUID()
-            val nextOccurrence = LocalDate.now().plusDays(7)
 
             transaction(db) {
                 RecurringItem.new(recurringId) {
-                    list = ShoppingList[listId]
+                    household = Household[householdId]
                     name = "Milk"
                     quantity = 2.0
                     unit = "liters"
                     frequency = RecurringFrequency.WEEKLY
-                    this.nextOccurrence = nextOccurrence
+                    lastPurchased = null
                     isActive = true
+                    pausedUntil = null
                     createdBy = Account[accountId]
                 }
             }
@@ -89,8 +87,9 @@ class RecurringItemTest :
                 recurring.shouldNotBeNull()
                 recurring.name shouldBe "Milk"
                 recurring.frequency shouldBe RecurringFrequency.WEEKLY
-                recurring.nextOccurrence shouldBe nextOccurrence
+                recurring.lastPurchased.shouldBeNull()
                 recurring.isActive.shouldBeTrue()
+                recurring.pausedUntil.shouldBeNull()
             }
         }
 
@@ -99,13 +98,14 @@ class RecurringItemTest :
 
             transaction(db) {
                 RecurringItem.new(recurringId) {
-                    list = ShoppingList[listId]
+                    household = Household[householdId]
                     name = "Bread"
                     quantity = 1.0
                     unit = null
                     frequency = RecurringFrequency.DAILY
-                    nextOccurrence = LocalDate.now().plusDays(1)
+                    lastPurchased = null
                     isActive = true
+                    pausedUntil = null
                     createdBy = Account[accountId]
                 }
             }
@@ -119,6 +119,62 @@ class RecurringItemTest :
                 val recurring = RecurringItem.findById(recurringId)
                 recurring.shouldNotBeNull()
                 recurring.isActive.shouldBeFalse()
+            }
+        }
+
+        test("can set pausedUntil date") {
+            val recurringId = UUID.randomUUID()
+            val pauseDate = LocalDate.now().plusDays(14)
+
+            transaction(db) {
+                RecurringItem.new(recurringId) {
+                    household = Household[householdId]
+                    name = "Cheese"
+                    quantity = 1.0
+                    unit = null
+                    frequency = RecurringFrequency.MONTHLY
+                    lastPurchased = null
+                    isActive = false
+                    pausedUntil = pauseDate
+                    createdBy = Account[accountId]
+                }
+            }
+
+            transaction(db) {
+                val recurring = RecurringItem.findById(recurringId)
+                recurring.shouldNotBeNull()
+                recurring.isActive.shouldBeFalse()
+                recurring.pausedUntil shouldBe pauseDate
+            }
+        }
+
+        test("can update lastPurchased") {
+            val recurringId = UUID.randomUUID()
+            val today = LocalDate.now()
+
+            transaction(db) {
+                RecurringItem.new(recurringId) {
+                    household = Household[householdId]
+                    name = "Juice"
+                    quantity = 1.0
+                    unit = "liter"
+                    frequency = RecurringFrequency.WEEKLY
+                    lastPurchased = null
+                    isActive = true
+                    pausedUntil = null
+                    createdBy = Account[accountId]
+                }
+            }
+
+            transaction(db) {
+                val recurring = RecurringItem[recurringId]
+                recurring.lastPurchased = today
+            }
+
+            transaction(db) {
+                val recurring = RecurringItem.findById(recurringId)
+                recurring.shouldNotBeNull()
+                recurring.lastPurchased shouldBe today
             }
         }
     })

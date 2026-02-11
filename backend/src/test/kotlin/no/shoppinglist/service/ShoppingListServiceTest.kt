@@ -12,6 +12,7 @@ import no.shoppinglist.domain.Households
 import no.shoppinglist.domain.ListItems
 import no.shoppinglist.domain.ListShares
 import no.shoppinglist.domain.MembershipRole
+import no.shoppinglist.domain.RecurringItems
 import no.shoppinglist.domain.SharePermission
 import no.shoppinglist.domain.ShoppingLists
 import org.jetbrains.exposed.sql.Database
@@ -34,6 +35,7 @@ class ShoppingListServiceTest :
                     Households,
                     HouseholdMemberships,
                     ShoppingLists,
+                    RecurringItems,
                     ListItems,
                     ListShares,
                     Comments,
@@ -59,6 +61,7 @@ class ShoppingListServiceTest :
                     Comments,
                     ListShares,
                     ListItems,
+                    RecurringItems,
                     ShoppingLists,
                     HouseholdMemberships,
                     Households,

@@ -19,6 +19,7 @@ import {
   toggleItemCheck,
 } from '../store/listsSlice';
 import { addComment, updateComment, removeComment } from '../store/commentsSlice';
+import i18n from '../i18n/i18n';
 import {
   getWebSocketService,
   type WebSocketEvent,
@@ -37,6 +38,9 @@ import {
 
 // Track current user ID to avoid processing own events
 let currentUserId: string | null = null;
+
+// Toast callback for showing notifications from outside React
+let toastCallback: ((message: string) => void) | null = null;
 
 // Track cleanup functions
 let unsubscribeConnectionState: (() => void) | null = null;
@@ -92,6 +96,13 @@ export function setCurrentUserId(userId: string | null): void {
  */
 export function getCurrentUserId(): string | null {
   return currentUserId;
+}
+
+/**
+ * Set a callback for showing toast notifications from the WebSocket bridge.
+ */
+export function setToastCallback(callback: ((message: string) => void) | null): void {
+  toastCallback = callback;
 }
 
 /**
@@ -250,6 +261,11 @@ function handleListCreated(dispatch: AppDispatch, event: ListCreatedEvent): void
       isOwner: false, // The current user is not the owner since it was created by someone else
     })
   );
+
+  // Show toast for auto-generated lists from the recurring scheduler
+  if (event.actor.id === 'system' && toastCallback) {
+    toastCallback(i18n.t('recurring.autoListCreated', { name: event.list.name }));
+  }
 }
 
 /**

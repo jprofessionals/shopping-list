@@ -21,6 +21,7 @@ import no.shoppinglist.domain.HouseholdMemberships
 import no.shoppinglist.domain.Households
 import no.shoppinglist.domain.ListItems
 import no.shoppinglist.domain.ListShares
+import no.shoppinglist.domain.RecurringItems
 import no.shoppinglist.domain.SharePermission
 import no.shoppinglist.domain.ShoppingLists
 import no.shoppinglist.service.AccountService
@@ -48,6 +49,7 @@ class SharedAccessRoutesTest :
                     Households,
                     HouseholdMemberships,
                     ShoppingLists,
+                    RecurringItems,
                     ListItems,
                     ListShares,
                 )
@@ -62,6 +64,7 @@ class SharedAccessRoutesTest :
             transaction(db) {
                 ListShares.deleteAll()
                 ListItems.deleteAll()
+                RecurringItems.deleteAll()
                 ShoppingLists.deleteAll()
                 HouseholdMemberships.deleteAll()
                 Households.deleteAll()
@@ -74,6 +77,7 @@ class SharedAccessRoutesTest :
                 SchemaUtils.drop(
                     ListShares,
                     ListItems,
+                    RecurringItems,
                     ShoppingLists,
                     HouseholdMemberships,
                     Households,

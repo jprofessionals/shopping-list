@@ -36,8 +36,6 @@ import no.shoppinglist.config.TestDatabaseConfig
 import no.shoppinglist.config.TestValkeyConfig
 import no.shoppinglist.config.ValkeyConfig
 import no.shoppinglist.domain.Accounts
-import no.shoppinglist.domain.RefreshTokens
-import no.shoppinglist.service.ValkeyService
 import no.shoppinglist.domain.Comments
 import no.shoppinglist.domain.HouseholdMemberships
 import no.shoppinglist.domain.Households
@@ -46,6 +44,8 @@ import no.shoppinglist.domain.ListActivities
 import no.shoppinglist.domain.ListItems
 import no.shoppinglist.domain.ListShares
 import no.shoppinglist.domain.PinnedLists
+import no.shoppinglist.domain.RecurringItems
+import no.shoppinglist.domain.RefreshTokens
 import no.shoppinglist.domain.ShoppingLists
 import no.shoppinglist.routes.auth.authRoutes
 import no.shoppinglist.routes.shoppinglist.shoppingListRoutes
@@ -57,9 +57,11 @@ import no.shoppinglist.service.JwtService
 import no.shoppinglist.service.ListItemService
 import no.shoppinglist.service.ListShareService
 import no.shoppinglist.service.PinnedListService
+import no.shoppinglist.service.RecurringItemService
 import no.shoppinglist.service.RefreshTokenService
 import no.shoppinglist.service.ShoppingListService
 import no.shoppinglist.service.TokenBlacklistService
+import no.shoppinglist.service.ValkeyService
 import no.shoppinglist.websocket.EventBroadcaster
 import no.shoppinglist.websocket.WebSocketBroadcastService
 import no.shoppinglist.websocket.WebSocketSessionManager
@@ -85,6 +87,7 @@ class ShoppingListRoutesTest :
         lateinit var eventBroadcaster: EventBroadcaster
         lateinit var refreshTokenService: RefreshTokenService
         lateinit var tokenBlacklistService: TokenBlacklistService
+        lateinit var recurringItemService: RecurringItemService
 
         beforeSpec {
             db = TestDatabaseConfig.init()
@@ -100,6 +103,7 @@ class ShoppingListRoutesTest :
                     PinnedLists,
                     ItemHistories,
                     Comments,
+                    RecurringItems,
                     RefreshTokens,
                 )
             }
@@ -137,6 +141,7 @@ class ShoppingListRoutesTest :
             eventBroadcaster = EventBroadcaster(broadcastService)
             refreshTokenService = RefreshTokenService(db)
             tokenBlacklistService = TestValkeyConfig.createNoOpTokenBlacklistService()
+            recurringItemService = RecurringItemService(db)
         }
 
         afterTest {
@@ -145,6 +150,7 @@ class ShoppingListRoutesTest :
                 ListActivities.deleteAll()
                 PinnedLists.deleteAll()
                 ItemHistories.deleteAll()
+                RecurringItems.deleteAll()
                 ListShares.deleteAll()
                 ListItems.deleteAll()
                 ShoppingLists.deleteAll()
@@ -162,6 +168,7 @@ class ShoppingListRoutesTest :
                     ListActivities,
                     PinnedLists,
                     ItemHistories,
+                    RecurringItems,
                     ListShares,
                     ListItems,
                     ShoppingLists,
@@ -221,6 +228,7 @@ class ShoppingListRoutesTest :
                     eventBroadcaster,
                     activityService,
                     itemHistoryService,
+                    recurringItemService,
                 )
             }
         }

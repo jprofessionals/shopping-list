@@ -5,6 +5,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import no.shoppinglist.config.TestDatabaseConfig
+import no.shoppinglist.domain.RecurringItems
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -26,7 +27,15 @@ class ListShareTest :
             listId = UUID.randomUUID()
 
             transaction(db) {
-                SchemaUtils.create(Accounts, Households, HouseholdMemberships, ShoppingLists, ListItems, ListShares)
+                SchemaUtils.create(
+                    Accounts,
+                    Households,
+                    HouseholdMemberships,
+                    ShoppingLists,
+                    RecurringItems,
+                    ListItems,
+                    ListShares,
+                )
 
                 Account.new(ownerAccountId) {
                     email = "owner@example.com"
@@ -54,7 +63,15 @@ class ListShareTest :
 
         afterSpec {
             transaction(db) {
-                SchemaUtils.drop(ListShares, ListItems, ShoppingLists, HouseholdMemberships, Households, Accounts)
+                SchemaUtils.drop(
+                    ListShares,
+                    ListItems,
+                    RecurringItems,
+                    ShoppingLists,
+                    HouseholdMemberships,
+                    Households,
+                    Accounts,
+                )
             }
         }
 

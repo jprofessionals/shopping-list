@@ -9,6 +9,7 @@ import authReducer from '../store/authSlice';
 import commentsReducer from '../store/commentsSlice';
 import householdsReducer from '../store/householdsSlice';
 import listsReducer from '../store/listsSlice';
+import recurringItemsReducer from '../store/recurringItemsSlice';
 import websocketReducer from '../store/websocketSlice';
 import { ToastProvider } from '../components/common';
 import i18nForTests from './i18nForTests';
@@ -19,6 +20,7 @@ const testReducers = {
   comments: commentsReducer,
   households: householdsReducer,
   lists: listsReducer,
+  recurringItems: recurringItemsReducer,
   websocket: websocketReducer,
 };
 

@@ -315,6 +315,29 @@
       "daysAgo": "{{count}}d siden"
     }
   },
+  "recurring": {
+    "title": "Faste varer",
+    "addItem": "Legg til vare",
+    "editItem": "Rediger vare",
+    "newItem": "Ny fast vare",
+    "noItems": "Ingen faste varer ennå. Legg til varer som skal kjøpes inn jevnlig.",
+    "frequency": "Frekvens",
+    "frequencyDaily": "Daglig",
+    "frequencyWeekly": "Ukentlig",
+    "frequencyBiweekly": "Annenhver uke",
+    "frequencyMonthly": "Månedlig",
+    "lastPurchased": "sist kjøpt {{date}}",
+    "paused": "Pauset",
+    "pausedUntilDate": "Pauset til {{date}}",
+    "pause": "Pause",
+    "resume": "Gjenoppta",
+    "edit": "Rediger",
+    "pauseTitle": "Pause fast vare",
+    "pauseUntilLabel": "Pause til (valgfritt)",
+    "pauseUntilHint": "La stå tom for å pause på ubestemt tid",
+    "confirmDelete": "Er du sikker på at du vil slette denne faste varen?",
+    "autoListCreated": "Ny handleliste opprettet: {{name}}"
+  },
   "app": {
     "shoppingList": "Handleliste"
   }
