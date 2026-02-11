@@ -1,8 +1,8 @@
 import { test, expect, APIRequestContext } from '@playwright/test';
 import WebSocket from 'ws';
 
-const BACKEND_1 = 'http://localhost:8080';
-const BACKEND_2 = 'http://localhost:8081';
+const BACKEND_1 = 'http://localhost:8080/api';
+const BACKEND_2 = 'http://localhost:8081/api';
 
 async function registerUser(
   request: APIRequestContext,
@@ -71,7 +71,7 @@ test.describe('Cross-pod coordination via Valkey', () => {
     const list = await listRes.json();
 
     // Connect WebSocket for user B to backend-2
-    const wsB = new WebSocket(`ws://localhost:8081/ws?token=${userB.token}`);
+    const wsB = new WebSocket(`ws://localhost:8081/api/ws?token=${userB.token}`);
 
     const itemAddedPromise = new Promise<Record<string, unknown>>((resolve, reject) => {
       const timeout = setTimeout(

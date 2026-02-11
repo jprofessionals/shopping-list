@@ -37,7 +37,7 @@ async function globalSetup() {
     retries = 60;
     while (retries > 0) {
       try {
-        execSync('curl -sf http://localhost:8081/health', { stdio: 'pipe' });
+        execSync('curl -sf http://localhost:8081/api/health', { stdio: 'pipe' });
         console.log('Backend-2 is ready!');
         break;
       } catch {

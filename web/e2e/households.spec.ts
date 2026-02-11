@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API_URL = 'http://localhost:8080';
+const API_URL = 'http://localhost:8080/api';
 
 test.describe('Households', () => {
   let authToken: string;

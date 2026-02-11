@@ -259,7 +259,7 @@ private fun Application.configureRouting(
     }
 }
 
-private fun io.ktor.server.routing.Routing.configureListRoutes(
+private fun io.ktor.server.routing.Route.configureListRoutes(
     services: Services,
     eventBroadcaster: EventBroadcaster,
 ) {

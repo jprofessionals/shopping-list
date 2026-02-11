@@ -32,7 +32,7 @@ export default function Login({ authConfig }: LoginProps) {
       const endpoint = isRegister ? '/auth/register' : '/auth/login';
       const body = isRegister ? { email, password, displayName } : { email, password };
 
-      const response = await fetch(`http://localhost:8080${endpoint}`, {
+      const response = await fetch(`http://localhost:8080/api${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

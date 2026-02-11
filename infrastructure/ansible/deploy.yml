@@ -90,7 +90,7 @@
 
     - name: Wait for backend health check
       ansible.builtin.uri:
-        url: "http://localhost:{{ backend_port }}/health"
+        url: "http://localhost:{{ backend_port }}/api/health"
         status_code: 200
       register: health
       retries: 15
