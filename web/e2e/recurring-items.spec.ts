@@ -106,7 +106,10 @@ test.describe('Recurring Items', () => {
     // Pause the item
     await page.getByTitle(/pause/i).click();
     await expect(page.getByRole('dialog', { name: /pause/i })).toBeVisible();
-    await page.getByRole('dialog').getByRole('button', { name: /^pause$/i }).click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: /^pause$/i })
+      .click();
 
     // Should show paused badge
     await expect(page.getByText(/paused/i)).toBeVisible();
@@ -140,7 +143,10 @@ test.describe('Recurring Items', () => {
     // Delete - click delete button to open confirmation dialog
     await page.getByTitle(/delete/i).click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await page.getByRole('dialog').getByRole('button', { name: /delete/i }).click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: /delete/i })
+      .click();
 
     // Item should be gone
     await expect(page.getByText('Butter')).not.toBeVisible({ timeout: 5000 });
