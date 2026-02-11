@@ -4,6 +4,7 @@ import android.app.Application
 import no.shoppinglist.android.di.appModule
 import no.shoppinglist.shared.api.ApiClient
 import no.shoppinglist.shared.repository.AuthRepository
+import no.shoppinglist.android.notification.AppNotificationManager
 import no.shoppinglist.shared.websocket.WebSocketEventHandler
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
@@ -26,5 +27,6 @@ class ShoppingListApp : Application() {
         apiClient.onSessionExpired = { authRepository.onSessionExpired() }
 
         get<WebSocketEventHandler>().start()
+        get<AppNotificationManager>().start()
     }
 }

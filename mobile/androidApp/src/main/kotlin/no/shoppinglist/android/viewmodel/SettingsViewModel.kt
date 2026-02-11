@@ -69,11 +69,21 @@ class SettingsViewModel(
         smartParsingEnabled: Boolean? = null,
         defaultQuantity: Double? = null,
         theme: String? = null,
+        notifyNewList: Boolean? = null,
+        notifyItemAdded: Boolean? = null,
+        notifyNewComment: Boolean? = null,
     ) {
         viewModelScope.launch {
             _uiState.update { it.copy(error = null) }
             try {
-                preferencesRepository.update(smartParsingEnabled, defaultQuantity, theme)
+                preferencesRepository.update(
+                    smartParsingEnabled = smartParsingEnabled,
+                    defaultQuantity = defaultQuantity,
+                    theme = theme,
+                    notifyNewList = notifyNewList,
+                    notifyItemAdded = notifyItemAdded,
+                    notifyNewComment = notifyNewComment,
+                )
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(error = e.message ?: "Failed to update preferences")

@@ -289,7 +289,15 @@
     "themeLight": "Light",
     "themeSystem": "System",
     "title": "Settings",
-    "unableToLoadPreferences": "Unable to load preferences."
+    "unableToLoadPreferences": "Unable to load preferences.",
+    "notifications": "Notifications",
+    "notificationsSubtitle": "Choose which notifications you want to receive.",
+    "notifyNewList": "New Shopping Lists",
+    "notifyNewListDescription": "Get notified when a new shopping list is created",
+    "notifyItemAdded": "Items Added",
+    "notifyItemAddedDescription": "Get notified when items are added to your lists",
+    "notifyNewComment": "New Comments",
+    "notifyNewCommentDescription": "Get notified when someone comments on your lists or households"
   },
   "comments": {
     "beTheFirst": "No comments yet. Be the first!",

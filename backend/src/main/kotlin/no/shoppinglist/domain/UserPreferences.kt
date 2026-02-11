@@ -12,6 +12,9 @@ object UserPreferencesTable : UUIDTable("user_preferences") {
     val smartParsingEnabled = bool("smart_parsing_enabled").default(true)
     val defaultQuantity = double("default_quantity").default(1.0)
     val theme = varchar("theme", 20).default("system")
+    val notifyNewList = bool("notify_new_list").default(true)
+    val notifyItemAdded = bool("notify_item_added").default(true)
+    val notifyNewComment = bool("notify_new_comment").default(true)
     val updatedAt = timestamp("updated_at")
 }
 
@@ -24,5 +27,8 @@ class UserPreferences(
     var smartParsingEnabled by UserPreferencesTable.smartParsingEnabled
     var defaultQuantity by UserPreferencesTable.defaultQuantity
     var theme by UserPreferencesTable.theme
+    var notifyNewList by UserPreferencesTable.notifyNewList
+    var notifyItemAdded by UserPreferencesTable.notifyItemAdded
+    var notifyNewComment by UserPreferencesTable.notifyNewComment
     var updatedAt by UserPreferencesTable.updatedAt
 }

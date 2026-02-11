@@ -185,7 +185,7 @@ describe('SettingsPage', () => {
     const store = createTestStore(createDefaultState());
     render(<SettingsPage />, { store });
 
-    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+    expect(screen.getAllByTestId('loading-spinner').length).toBeGreaterThan(0);
 
     // Resolve the fetch
     resolvePreferences!({
@@ -194,7 +194,7 @@ describe('SettingsPage', () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+      expect(screen.queryAllByTestId('loading-spinner')).toHaveLength(0);
     });
   });
 

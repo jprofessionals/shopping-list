@@ -26,11 +26,17 @@ class PreferencesRepository(
         smartParsingEnabled: Boolean? = null,
         defaultQuantity: Double? = null,
         theme: String? = null,
+        notifyNewList: Boolean? = null,
+        notifyItemAdded: Boolean? = null,
+        notifyNewComment: Boolean? = null,
     ) {
         val request = UpdatePreferencesRequest(
             smartParsingEnabled = smartParsingEnabled,
             defaultQuantity = defaultQuantity,
             theme = theme,
+            notifyNewList = notifyNewList,
+            notifyItemAdded = notifyItemAdded,
+            notifyNewComment = notifyNewComment,
         )
         val response = preferencesApi.updatePreferences(request)
         _preferences.value = response

@@ -5,9 +5,13 @@ import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.json.Json
 import no.shoppinglist.shared.api.dto.CreateItemRequest
 import no.shoppinglist.shared.api.dto.CreateListRequest
+import no.shoppinglist.shared.api.dto.CreateRecurringItemRequest
+import no.shoppinglist.shared.api.dto.PauseRecurringItemRequest
 import no.shoppinglist.shared.api.dto.UpdateItemRequest
 import no.shoppinglist.shared.api.dto.UpdateListRequest
+import no.shoppinglist.shared.api.dto.UpdateRecurringItemRequest
 import no.shoppinglist.shared.api.routes.ListApi
+import no.shoppinglist.shared.api.routes.RecurringItemApi
 import no.shoppinglist.shared.cache.ShoppingListDatabase
 import no.shoppinglist.shared.cache.SyncQueueEntry
 import no.shoppinglist.shared.repository.isNetworkError
@@ -21,12 +25,14 @@ typealias SyncNotificationCallback = (message: String) -> Unit
 class SyncManager(
     private val database: ShoppingListDatabase,
     private val listApi: ListApi,
+    private val recurringItemApi: RecurringItemApi,
     private val json: Json = Json { ignoreUnknownKeys = true; encodeDefaults = true },
     private val onNotification: SyncNotificationCallback = {},
 ) {
     private val syncQueries = database.syncQueueQueries
     private val listQueries = database.shoppingListQueries
     private val itemQueries = database.listItemQueries
+    private val recurringQueries = database.recurringItemQueries
 
     /**
      * Drains the sync queue in order, attempting to replay each pending change
@@ -67,6 +73,7 @@ class SyncManager(
         when (entry.entityType) {
             "LIST" -> processListEntry(entry)
             "ITEM" -> processItemEntry(entry)
+            "RECURRING_ITEM" -> processRecurringItemEntry(entry)
             else -> {
                 // Unknown entity type; remove from queue
                 syncQueries.deleteById(entry.id)
@@ -170,6 +177,58 @@ class SyncManager(
         }
     }
 
+    private suspend fun processRecurringItemEntry(entry: SyncQueueEntry) {
+        val parentId = entry.parentId ?: return  // parentId = householdId
+
+        when (entry.operationType) {
+            "CREATE" -> {
+                val request = json.decodeFromString(CreateRecurringItemRequest.serializer(), entry.payload)
+                val response = recurringItemApi.createItem(parentId, request)
+                recurringQueries.deleteById(entry.entityId)
+                recurringQueries.insert(
+                    id = response.id,
+                    householdId = parentId,
+                    name = response.name,
+                    quantity = response.quantity,
+                    unit = response.unit,
+                    frequency = response.frequency,
+                    lastPurchased = response.lastPurchased,
+                    isActive = response.isActive,
+                    pausedUntil = response.pausedUntil,
+                    createdById = response.createdBy.id,
+                    createdByName = response.createdBy.displayName,
+                )
+            }
+            "UPDATE" -> {
+                val request = json.decodeFromString(UpdateRecurringItemRequest.serializer(), entry.payload)
+                val response = recurringItemApi.updateItem(parentId, entry.entityId, request)
+                recurringQueries.insert(
+                    id = response.id,
+                    householdId = parentId,
+                    name = response.name,
+                    quantity = response.quantity,
+                    unit = response.unit,
+                    frequency = response.frequency,
+                    lastPurchased = response.lastPurchased,
+                    isActive = response.isActive,
+                    pausedUntil = response.pausedUntil,
+                    createdById = response.createdBy.id,
+                    createdByName = response.createdBy.displayName,
+                )
+            }
+            "DELETE" -> {
+                recurringItemApi.deleteItem(parentId, entry.entityId)
+            }
+            "PAUSE" -> {
+                val request = json.decodeFromString(PauseRecurringItemRequest.serializer(), entry.payload)
+                recurringItemApi.pauseItem(parentId, entry.entityId, request)
+            }
+            "RESUME" -> {
+                recurringItemApi.resumeItem(parentId, entry.entityId)
+            }
+        }
+    }
+
     private suspend fun refreshFromServer(entry: SyncQueueEntry) {
         try {
             when (entry.entityType) {
@@ -231,6 +290,30 @@ class SyncManager(
                         itemQueries.deleteByListId(parentId)
                     }
                 }
+                "RECURRING_ITEM" -> {
+                    val parentId = entry.parentId ?: return
+                    try {
+                        val items = recurringItemApi.getItems(parentId)
+                        recurringQueries.deleteByHouseholdId(parentId)
+                        for (item in items) {
+                            recurringQueries.insert(
+                                id = item.id,
+                                householdId = parentId,
+                                name = item.name,
+                                quantity = item.quantity,
+                                unit = item.unit,
+                                frequency = item.frequency,
+                                lastPurchased = item.lastPurchased,
+                                isActive = item.isActive,
+                                pausedUntil = item.pausedUntil,
+                                createdById = item.createdBy.id,
+                                createdByName = item.createdBy.displayName,
+                            )
+                        }
+                    } catch (_: Exception) {
+                        // If refresh fails, leave local state as-is
+                    }
+                }
             }
         } catch (_: Exception) {
             // If refresh also fails, we just leave local state as-is
@@ -264,6 +347,14 @@ class SyncManager(
                 }
                 entry.entityType == "ITEM" && entry.operationType == "UPDATE" -> {
                     val request = json.decodeFromString(UpdateItemRequest.serializer(), entry.payload)
+                    request.name
+                }
+                entry.entityType == "RECURRING_ITEM" && entry.operationType == "CREATE" -> {
+                    val request = json.decodeFromString(CreateRecurringItemRequest.serializer(), entry.payload)
+                    request.name
+                }
+                entry.entityType == "RECURRING_ITEM" && entry.operationType == "UPDATE" -> {
+                    val request = json.decodeFromString(UpdateRecurringItemRequest.serializer(), entry.payload)
                     request.name
                 }
                 else -> entry.entityId

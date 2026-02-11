@@ -227,7 +227,14 @@
     "themeDescription": "Choose your preferred color scheme",
     "themeLight": "Light",
     "themeSystem": "System",
-    "title": "Settings"
+    "title": "Settings",
+    "notifications": "Notifications",
+    "notifyNewList": "New Shopping Lists",
+    "notifyNewListDescription": "Get notified when a new shopping list is created",
+    "notifyItemAdded": "Items Added",
+    "notifyItemAddedDescription": "Get notified when items are added to your lists",
+    "notifyNewComment": "New Comments",
+    "notifyNewCommentDescription": "Get notified when someone comments on your lists or households"
   },
   "comments": {
     "beTheFirst": "No comments yet. Be the first!",
@@ -252,6 +259,29 @@
       "minutesAgo": "{{count}}m ago"
     },
     "title": "Comments"
+  },
+  "recurring": {
+    "title": "Recurring Items",
+    "addItem": "Add Item",
+    "editItem": "Edit Item",
+    "newItem": "New Recurring Item",
+    "noItems": "No recurring items yet. Add items that should be purchased regularly.",
+    "frequency": "Frequency",
+    "frequencyDaily": "Daily",
+    "frequencyWeekly": "Weekly",
+    "frequencyBiweekly": "Biweekly",
+    "frequencyMonthly": "Monthly",
+    "lastPurchased": "last purchased {{date}}",
+    "paused": "Paused",
+    "pausedUntilDate": "Paused until {{date}}",
+    "pause": "Pause",
+    "resume": "Resume",
+    "edit": "Edit",
+    "pauseTitle": "Pause Recurring Item",
+    "pauseUntilLabel": "Pause until (optional)",
+    "pauseUntilHint": "Leave empty to pause indefinitely",
+    "confirmDelete": "Delete recurring item?",
+    "confirmDeleteDescription": "This item will be permanently removed and will no longer generate shopping lists."
   },
   "app": {
     "shoppingList": "Shopping List"

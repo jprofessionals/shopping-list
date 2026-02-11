@@ -227,7 +227,14 @@
     "themeDescription": "Velg ditt foretrukne fargetema",
     "themeLight": "Lyst",
     "themeSystem": "System",
-    "title": "Innstillinger"
+    "title": "Innstillinger",
+    "notifications": "Varsler",
+    "notifyNewList": "Nye handlelister",
+    "notifyNewListDescription": "Bli varslet når en ny handleliste opprettes",
+    "notifyItemAdded": "Varer lagt til",
+    "notifyItemAddedDescription": "Bli varslet når varer legges til i listene dine",
+    "notifyNewComment": "Nye kommentarer",
+    "notifyNewCommentDescription": "Bli varslet når noen kommenterer på listene eller husstandene dine"
   },
   "comments": {
     "beTheFirst": "Ingen kommentarer ennå. Bli den første!",
@@ -252,6 +259,29 @@
       "minutesAgo": "{{count}}m siden"
     },
     "title": "Kommentarer"
+  },
+  "recurring": {
+    "title": "Faste varer",
+    "addItem": "Legg til vare",
+    "editItem": "Rediger vare",
+    "newItem": "Ny fast vare",
+    "noItems": "Ingen faste varer enn\u00e5. Legg til varer som skal kj\u00f8pes inn jevnlig.",
+    "frequency": "Frekvens",
+    "frequencyDaily": "Daglig",
+    "frequencyWeekly": "Ukentlig",
+    "frequencyBiweekly": "Annenhver uke",
+    "frequencyMonthly": "M\u00e5nedlig",
+    "lastPurchased": "sist kj\u00f8pt {{date}}",
+    "paused": "Pauset",
+    "pausedUntilDate": "Pauset til {{date}}",
+    "pause": "Pause",
+    "resume": "Gjenoppta",
+    "edit": "Rediger",
+    "pauseTitle": "Pause fast vare",
+    "pauseUntilLabel": "Pause til (valgfritt)",
+    "pauseUntilHint": "La st\u00e5 tom for \u00e5 pause p\u00e5 ubestemt tid",
+    "confirmDelete": "Slette fast vare?",
+    "confirmDeleteDescription": "Denne varen vil bli permanent fjernet og vil ikke lenger generere handlelister."
   },
   "app": {
     "shoppingList": "Handleliste"

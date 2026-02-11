@@ -60,6 +60,11 @@ sealed class WebSocketEvent {
         val actor: WsActorInfo,
     ) : WebSocketEvent()
 
+    data class ListCreated(
+        val list: WsListData,
+        val actor: WsActorInfo,
+    ) : WebSocketEvent()
+
     data class ListUpdated(
         val list: WsListData,
         val actor: WsActorInfo,
@@ -265,6 +270,11 @@ class WebSocketClient(
                     val itemId = jsonObject["itemId"]?.jsonPrimitive?.content ?: return
                     val actor = json.decodeFromString(WsActorInfo.serializer(), jsonObject["actor"].toString())
                     WebSocketEvent.ItemRemoved(listId, itemId, actor)
+                }
+                "list:created" -> {
+                    val list = json.decodeFromString(WsListData.serializer(), jsonObject["list"].toString())
+                    val actor = json.decodeFromString(WsActorInfo.serializer(), jsonObject["actor"].toString())
+                    WebSocketEvent.ListCreated(list, actor)
                 }
                 "list:updated" -> {
                     val list = json.decodeFromString(WsListData.serializer(), jsonObject["list"].toString())

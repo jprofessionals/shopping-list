@@ -6,6 +6,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -13,6 +16,12 @@ import kotlinx.datetime.Clock
 import no.shoppinglist.shared.api.dto.WsItemData
 import no.shoppinglist.shared.cache.ShoppingListDatabase
 import no.shoppinglist.shared.repository.AuthRepository
+
+sealed class NotificationEvent {
+    data class NewList(val listName: String, val actorName: String) : NotificationEvent()
+    data class ItemAdded(val listName: String, val itemName: String, val actorName: String) : NotificationEvent()
+    data class NewComment(val targetName: String, val authorName: String, val text: String) : NotificationEvent()
+}
 
 class WebSocketEventHandler(
     private val webSocketClient: WebSocketClient,
@@ -23,6 +32,9 @@ class WebSocketEventHandler(
     private val itemQueries = database.listItemQueries
     private val listQueries = database.shoppingListQueries
     private var subscribedListIds = emptySet<String>()
+
+    private val _notificationEvents = MutableSharedFlow<NotificationEvent>(extraBufferCapacity = 16)
+    val notificationEvents: SharedFlow<NotificationEvent> = _notificationEvents.asSharedFlow()
 
     fun start() {
         observeAuthState()
@@ -87,6 +99,11 @@ class WebSocketEventHandler(
                     createdAt = Clock.System.now().toString(),
                 )
                 recalculateListCounts(event.listId)
+                val listName = listQueries.selectById(event.listId).executeAsOneOrNull()?.name ?: event.listId
+                emitNotification(
+                    NotificationEvent.ItemAdded(listName, event.item.name, event.actor.displayName),
+                    event.actor.id,
+                )
             }
             is WebSocketEvent.ItemUpdated -> {
                 upsertItem(event.listId, event.item)
@@ -111,6 +128,23 @@ class WebSocketEventHandler(
                 itemQueries.deleteById(event.itemId)
                 recalculateListCounts(event.listId)
             }
+            is WebSocketEvent.ListCreated -> {
+                listQueries.insert(
+                    id = event.list.id,
+                    name = event.list.name,
+                    householdId = event.list.householdId,
+                    isPersonal = event.list.isPersonal,
+                    createdAt = Clock.System.now().toString(),
+                    isOwner = false,
+                    itemCount = 0,
+                    uncheckedCount = 0,
+                    isPinned = false,
+                )
+                emitNotification(
+                    NotificationEvent.NewList(event.list.name, event.actor.displayName),
+                    event.actor.id,
+                )
+            }
             is WebSocketEvent.ListUpdated -> {
                 val existing = listQueries.selectById(event.list.id).executeAsOneOrNull()
                 if (existing != null) {
@@ -131,7 +165,12 @@ class WebSocketEventHandler(
                 listQueries.deleteById(event.listId)
                 itemQueries.deleteByListId(event.listId)
             }
-            is WebSocketEvent.CommentAdded,
+            is WebSocketEvent.CommentAdded -> {
+                emitNotification(
+                    NotificationEvent.NewComment(event.listId, event.actor.displayName, event.comment.text),
+                    event.actor.id,
+                )
+            }
             is WebSocketEvent.CommentUpdated,
             is WebSocketEvent.CommentDeleted,
             is WebSocketEvent.Subscribed,
@@ -172,5 +211,12 @@ class WebSocketEventHandler(
             uncheckedCount = unchecked,
             isPinned = existing.isPinned,
         )
+    }
+
+    private fun emitNotification(event: NotificationEvent, actorId: String) {
+        val currentUserId = authRepository.currentUser.value?.id
+        if (currentUserId != null && actorId != currentUserId) {
+            _notificationEvents.tryEmit(event)
+        }
     }
 }

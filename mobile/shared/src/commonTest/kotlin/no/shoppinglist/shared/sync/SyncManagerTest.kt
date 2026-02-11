@@ -15,6 +15,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import no.shoppinglist.shared.api.dto.ItemResponse
+import no.shoppinglist.shared.api.routes.RecurringItemApi
 import no.shoppinglist.shared.cache.ShoppingListDatabase
 import no.shoppinglist.shared.repository.TestListApi
 import no.shoppinglist.shared.test.createTestDatabase
@@ -93,6 +94,7 @@ class SyncManagerTest {
         val syncManager = SyncManager(
             database = database,
             listApi = listApi,
+            recurringItemApi = RecurringItemApi(),
             json = testJson,
             onNotification = { notifications.add(it) },
         )
@@ -127,6 +129,7 @@ class SyncManagerTest {
         val syncManager = SyncManager(
             database = database,
             listApi = listApi,
+            recurringItemApi = RecurringItemApi(),
             json = testJson,
             onNotification = { notifications.add(it) },
         )
@@ -161,6 +164,7 @@ class SyncManagerTest {
         val syncManager = SyncManager(
             database = database,
             listApi = listApi,
+            recurringItemApi = RecurringItemApi(),
             json = testJson,
             onNotification = { notifications.add(it) },
         )
@@ -193,6 +197,7 @@ class SyncManagerTest {
         val syncManager = SyncManager(
             database = database,
             listApi = listApi,
+            recurringItemApi = RecurringItemApi(),
             json = testJson,
             onNotification = { notifications.add(it) },
         )
@@ -231,6 +236,7 @@ class SyncManagerTest {
         val syncManager = SyncManager(
             database = database,
             listApi = listApi,
+            recurringItemApi = RecurringItemApi(),
             json = testJson,
             onNotification = { notifications.add(it) },
         )

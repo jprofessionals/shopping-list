@@ -12,6 +12,9 @@ interface Preferences {
   smartParsingEnabled: boolean;
   defaultQuantity: number;
   theme: 'system' | 'light' | 'dark';
+  notifyNewList: boolean;
+  notifyItemAdded: boolean;
+  notifyNewComment: boolean;
 }
 
 const KEYBOARD_SHORTCUTS_KEYS = [
@@ -414,6 +417,154 @@ export default function SettingsPage() {
                   <option value="light">{t('settings.themeLight')}</option>
                   <option value="dark">{t('settings.themeDark')}</option>
                 </select>
+              </div>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+              {t('settings.unableToLoadPreferences')}
+            </p>
+          )}
+        </section>
+
+        {/* Notifications Section */}
+        <section
+          className="rounded-lg bg-white p-6 shadow dark:bg-gray-800 dark:shadow-gray-900/20"
+          aria-labelledby="notifications-heading"
+          data-testid="notifications-section"
+        >
+          <h3
+            id="notifications-heading"
+            className="text-lg font-medium text-gray-900 dark:text-white"
+          >
+            {t('settings.notifications')}
+          </h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {t('settings.notificationsSubtitle')}
+          </p>
+
+          {isLoading ? (
+            <div className="mt-4 flex justify-center">
+              <LoadingSpinner size="sm" />
+            </div>
+          ) : preferences ? (
+            <div className="mt-4 space-y-5">
+              {/* Notify New List Toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <label
+                    htmlFor="notify-new-list"
+                    className="text-sm font-medium text-gray-900 dark:text-white"
+                    id="notify-new-list-label"
+                  >
+                    {t('settings.notifyNewList')}
+                  </label>
+                  <p
+                    className="text-sm text-gray-500 dark:text-gray-400"
+                    id="notify-new-list-description"
+                  >
+                    {t('settings.notifyNewListDescription')}
+                  </p>
+                </div>
+                <button
+                  id="notify-new-list"
+                  type="button"
+                  role="switch"
+                  aria-checked={preferences.notifyNewList}
+                  aria-labelledby="notify-new-list-label"
+                  aria-describedby="notify-new-list-description"
+                  onClick={() => updatePreference('notifyNewList', !preferences.notifyNewList)}
+                  disabled={isSaving}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 disabled:opacity-50 ${
+                    preferences.notifyNewList ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-600'
+                  }`}
+                  data-testid="notify-new-list-toggle"
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      preferences.notifyNewList ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Notify Item Added Toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <label
+                    htmlFor="notify-item-added"
+                    className="text-sm font-medium text-gray-900 dark:text-white"
+                    id="notify-item-added-label"
+                  >
+                    {t('settings.notifyItemAdded')}
+                  </label>
+                  <p
+                    className="text-sm text-gray-500 dark:text-gray-400"
+                    id="notify-item-added-description"
+                  >
+                    {t('settings.notifyItemAddedDescription')}
+                  </p>
+                </div>
+                <button
+                  id="notify-item-added"
+                  type="button"
+                  role="switch"
+                  aria-checked={preferences.notifyItemAdded}
+                  aria-labelledby="notify-item-added-label"
+                  aria-describedby="notify-item-added-description"
+                  onClick={() => updatePreference('notifyItemAdded', !preferences.notifyItemAdded)}
+                  disabled={isSaving}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 disabled:opacity-50 ${
+                    preferences.notifyItemAdded ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-600'
+                  }`}
+                  data-testid="notify-item-added-toggle"
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      preferences.notifyItemAdded ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Notify New Comment Toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <label
+                    htmlFor="notify-new-comment"
+                    className="text-sm font-medium text-gray-900 dark:text-white"
+                    id="notify-new-comment-label"
+                  >
+                    {t('settings.notifyNewComment')}
+                  </label>
+                  <p
+                    className="text-sm text-gray-500 dark:text-gray-400"
+                    id="notify-new-comment-description"
+                  >
+                    {t('settings.notifyNewCommentDescription')}
+                  </p>
+                </div>
+                <button
+                  id="notify-new-comment"
+                  type="button"
+                  role="switch"
+                  aria-checked={preferences.notifyNewComment}
+                  aria-labelledby="notify-new-comment-label"
+                  aria-describedby="notify-new-comment-description"
+                  onClick={() =>
+                    updatePreference('notifyNewComment', !preferences.notifyNewComment)
+                  }
+                  disabled={isSaving}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 disabled:opacity-50 ${
+                    preferences.notifyNewComment ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-600'
+                  }`}
+                  data-testid="notify-new-comment-toggle"
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      preferences.notifyNewComment ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
               </div>
             </div>
           ) : (

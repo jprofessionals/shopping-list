@@ -149,6 +149,14 @@ fun HouseholdDetailScreen(
             }
 
             item {
+                RecurringItemsSection(householdId = householdId)
+            }
+
+            item {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+            }
+
+            item {
                 CommentsSection(
                     targetType = "household",
                     targetId = householdId,

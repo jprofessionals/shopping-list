@@ -1,0 +1,32 @@
+CREATE TABLE RecurringItemEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    householdId TEXT NOT NULL,
+    name TEXT NOT NULL,
+    quantity REAL NOT NULL DEFAULT 1.0,
+    unit TEXT,
+    frequency TEXT NOT NULL,
+    lastPurchased TEXT,
+    isActive INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1,
+    pausedUntil TEXT,
+    createdById TEXT NOT NULL,
+    createdByName TEXT NOT NULL
+);
+
+selectByHouseholdId:
+SELECT * FROM RecurringItemEntity WHERE householdId = ? ORDER BY name ASC;
+
+selectById:
+SELECT * FROM RecurringItemEntity WHERE id = ?;
+
+insert:
+INSERT OR REPLACE INTO RecurringItemEntity(id, householdId, name, quantity, unit, frequency, lastPurchased, isActive, pausedUntil, createdById, createdByName)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM RecurringItemEntity WHERE id = ?;
+
+deleteByHouseholdId:
+DELETE FROM RecurringItemEntity WHERE householdId = ?;
+
+deleteAll:
+DELETE FROM RecurringItemEntity;

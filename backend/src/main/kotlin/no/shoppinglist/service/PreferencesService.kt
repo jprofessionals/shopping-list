@@ -12,6 +12,9 @@ data class PreferencesData(
     val smartParsingEnabled: Boolean,
     val defaultQuantity: Double,
     val theme: String,
+    val notifyNewList: Boolean,
+    val notifyItemAdded: Boolean,
+    val notifyNewComment: Boolean,
 )
 
 class PreferencesService(
@@ -29,11 +32,17 @@ class PreferencesService(
                     smartParsingEnabled = it.smartParsingEnabled,
                     defaultQuantity = it.defaultQuantity,
                     theme = it.theme,
+                    notifyNewList = it.notifyNewList,
+                    notifyItemAdded = it.notifyItemAdded,
+                    notifyNewComment = it.notifyNewComment,
                 )
             } ?: PreferencesData(
                 smartParsingEnabled = true,
                 defaultQuantity = 1.0,
                 theme = "system",
+                notifyNewList = true,
+                notifyItemAdded = true,
+                notifyNewComment = true,
             )
         }
 
@@ -42,33 +51,46 @@ class PreferencesService(
         smartParsingEnabled: Boolean?,
         defaultQuantity: Double?,
         theme: String?,
+        notifyNewList: Boolean?,
+        notifyItemAdded: Boolean?,
+        notifyNewComment: Boolean?,
     ): PreferencesData =
         transaction(db) {
-            val account =
-                Account.findById(accountId)
-                    ?: throw IllegalArgumentException("Account not found")
-
-            val prefs =
-                UserPreferences
-                    .find { UserPreferencesTable.account eq accountId }
-                    .firstOrNull()
-                    ?: UserPreferences.new {
-                        this.account = account
-                        this.smartParsingEnabled = true
-                        this.defaultQuantity = 1.0
-                        this.theme = "system"
-                        this.updatedAt = Instant.now()
-                    }
-
+            val prefs = findOrCreatePreferences(accountId)
             smartParsingEnabled?.let { prefs.smartParsingEnabled = it }
             defaultQuantity?.let { prefs.defaultQuantity = it }
             theme?.let { prefs.theme = it }
+            notifyNewList?.let { prefs.notifyNewList = it }
+            notifyItemAdded?.let { prefs.notifyItemAdded = it }
+            notifyNewComment?.let { prefs.notifyNewComment = it }
             prefs.updatedAt = Instant.now()
-
-            PreferencesData(
-                smartParsingEnabled = prefs.smartParsingEnabled,
-                defaultQuantity = prefs.defaultQuantity,
-                theme = prefs.theme,
-            )
+            prefs.toData()
         }
+
+    private fun findOrCreatePreferences(accountId: UUID): UserPreferences =
+        UserPreferences
+            .find { UserPreferencesTable.account eq accountId }
+            .firstOrNull()
+            ?: UserPreferences.new {
+                this.account =
+                    Account.findById(accountId)
+                        ?: throw IllegalArgumentException("Account not found")
+                this.smartParsingEnabled = true
+                this.defaultQuantity = 1.0
+                this.theme = "system"
+                this.notifyNewList = true
+                this.notifyItemAdded = true
+                this.notifyNewComment = true
+                this.updatedAt = Instant.now()
+            }
+
+    private fun UserPreferences.toData() =
+        PreferencesData(
+            smartParsingEnabled = smartParsingEnabled,
+            defaultQuantity = defaultQuantity,
+            theme = theme,
+            notifyNewList = notifyNewList,
+            notifyItemAdded = notifyItemAdded,
+            notifyNewComment = notifyNewComment,
+        )
 }

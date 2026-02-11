@@ -58,6 +58,7 @@ class AuthRepository(
         database.householdQueries.deleteAllHouseholds()
         database.householdQueries.deleteAllMembers()
         database.syncQueueQueries.deleteAll()
+        database.recurringItemQueries.deleteAll()
     }
 
     suspend fun loadCurrentUser() {
