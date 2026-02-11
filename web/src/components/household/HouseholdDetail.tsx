@@ -53,7 +53,7 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:8080/households/${householdId}`, {
+      const response = await fetch(`http://localhost:8080/api/households/${householdId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -76,7 +76,7 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
     if (!token || !confirm(t('householdDetail.confirmDelete'))) return;
 
     try {
-      const response = await fetch(`http://localhost:8080/households/${householdId}`, {
+      const response = await fetch(`http://localhost:8080/api/households/${householdId}`, {
         method: 'DELETE',
         headers: authHeaders(),
       });
@@ -98,7 +98,7 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
     setAddError(null);
 
     try {
-      const response = await fetch(`http://localhost:8080/households/${householdId}/members`, {
+      const response = await fetch(`http://localhost:8080/api/households/${householdId}/members`, {
         method: 'POST',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ email: addEmail.trim(), role: addRole }),
@@ -130,7 +130,7 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
 
     try {
       const response = await fetch(
-        `http://localhost:8080/households/${householdId}/members/${accountId}`,
+        `http://localhost:8080/api/households/${householdId}/members/${accountId}`,
         {
           method: 'DELETE',
           headers: authHeaders(),
@@ -150,7 +150,7 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
 
     try {
       const response = await fetch(
-        `http://localhost:8080/households/${householdId}/members/${accountId}`,
+        `http://localhost:8080/api/households/${householdId}/members/${accountId}`,
         {
           method: 'PATCH',
           headers: authHeaders({ 'Content-Type': 'application/json' }),

@@ -17,6 +17,7 @@ import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.swagger.swaggerUI
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
+import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.pingPeriod
@@ -229,30 +230,32 @@ private fun Application.configureRouting(
     valkeyService: ValkeyService,
 ) {
     routing {
-        swaggerUI(path = "swagger", swaggerFile = "openapi/documentation.yaml")
-        get("/health") {
-            val valkeyStatus = if (valkeyService.isConnected()) "up" else "degraded"
-            call.respondText("OK (valkey: $valkeyStatus)")
-        }
+        route("/api") {
+            swaggerUI(path = "swagger", swaggerFile = "openapi/documentation.yaml")
+            get("/health") {
+                val valkeyStatus = if (valkeyService.isConnected()) "up" else "degraded"
+                call.respondText("OK (valkey: $valkeyStatus)")
+            }
 
-        webSocketRoutes(
-            authConfig.jwt,
-            sessionManager,
-            services.shoppingListService,
-            services.householdService,
-            tokenBlacklistService,
-            broadcastService,
-        )
-        authRoutes(authConfig, services.accountService, jwtService, refreshTokenService, tokenBlacklistService)
-        householdRoutes(services.householdService, services.accountService)
-        configureListRoutes(services, eventBroadcaster)
-        sharedAccessRoutes(services.listShareService, services.listItemService)
-        activityRoutes(services.activityService, services.shoppingListService)
-        suggestionRoutes(services.itemHistoryService)
-        preferencesRoutes(services.preferencesService)
-        listCommentRoutes(services.commentService, services.shoppingListService, eventBroadcaster)
-        householdCommentRoutes(services.commentService, services.householdService, eventBroadcaster)
-        asyncApiRoutes()
+            webSocketRoutes(
+                authConfig.jwt,
+                sessionManager,
+                services.shoppingListService,
+                services.householdService,
+                tokenBlacklistService,
+                broadcastService,
+            )
+            authRoutes(authConfig, services.accountService, jwtService, refreshTokenService, tokenBlacklistService)
+            householdRoutes(services.householdService, services.accountService)
+            configureListRoutes(services, eventBroadcaster)
+            sharedAccessRoutes(services.listShareService, services.listItemService)
+            activityRoutes(services.activityService, services.shoppingListService)
+            suggestionRoutes(services.itemHistoryService)
+            preferencesRoutes(services.preferencesService)
+            listCommentRoutes(services.commentService, services.shoppingListService, eventBroadcaster)
+            householdCommentRoutes(services.commentService, services.householdService, eventBroadcaster)
+            asyncApiRoutes()
+        }
     }
 }
 

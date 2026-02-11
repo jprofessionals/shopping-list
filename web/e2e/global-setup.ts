@@ -15,7 +15,7 @@ async function globalSetup() {
     let retries = 60; // 60 retries * 2 seconds = 2 minutes max wait
     while (retries > 0) {
       try {
-        execSync('curl -sf http://localhost:8080/health', { stdio: 'pipe' });
+        execSync('curl -sf http://localhost:8080/api/health', { stdio: 'pipe' });
         console.log('Backend is ready!');
         break;
       } catch {

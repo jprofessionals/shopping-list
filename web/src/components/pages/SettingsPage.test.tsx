@@ -234,7 +234,7 @@ describe('SettingsPage', () => {
     await userEvent.click(toggle);
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/preferences', {
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/preferences', {
         method: 'PATCH',
         headers: {
           Authorization: 'Bearer test-token',
@@ -267,7 +267,7 @@ describe('SettingsPage', () => {
     fireEvent.change(select, { target: { value: '2' } });
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/preferences', {
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/preferences', {
         method: 'PATCH',
         headers: {
           Authorization: 'Bearer test-token',
@@ -300,7 +300,7 @@ describe('SettingsPage', () => {
     fireEvent.change(select, { target: { value: 'dark' } });
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/preferences', {
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/preferences', {
         method: 'PATCH',
         headers: {
           Authorization: 'Bearer test-token',
@@ -396,7 +396,7 @@ describe('SettingsPage', () => {
     await userEvent.click(unpinButton);
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/lists/list-1/pin', {
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/lists/list-1/pin', {
         method: 'DELETE',
         headers: { Authorization: 'Bearer test-token' },
       });
@@ -466,7 +466,7 @@ describe('SettingsPage', () => {
     render(<SettingsPage />, { store });
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/lists', {
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/lists', {
         headers: { Authorization: 'Bearer test-token' },
       });
     });
@@ -488,7 +488,7 @@ describe('SettingsPage', () => {
 
     // Verify only preferences endpoint was called
     const listsFetchCalls = mockFetch.mock.calls.filter(
-      (call) => call[0] === 'http://localhost:8080/lists'
+      (call) => call[0] === 'http://localhost:8080/api/lists'
     );
     expect(listsFetchCalls.length).toBe(0);
   });

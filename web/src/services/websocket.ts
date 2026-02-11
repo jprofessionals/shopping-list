@@ -234,20 +234,20 @@ function getDefaultWsUrl(): string {
   const apiUrl = import.meta.env.VITE_API_URL;
   if (apiUrl === undefined) {
     // Dev mode: match the hardcoded API base in api.ts
-    return 'ws://localhost:8080/ws';
+    return 'ws://localhost:8080/api/ws';
   }
   if (apiUrl === '') {
     // Production: same-origin
     if (typeof window !== 'undefined' && window.location?.host) {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      return `${protocol}//${window.location.host}/ws`;
+      return `${protocol}//${window.location.host}/api/ws`;
     }
-    return 'ws://localhost:8080/ws';
+    return 'ws://localhost:8080/api/ws';
   }
   // Explicit API URL: derive WS URL from it
   const url = new URL(apiUrl);
   const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${protocol}//${url.host}/ws`;
+  return `${protocol}//${url.host}/api/ws`;
 }
 
 const DEFAULT_CONFIG: Required<WebSocketConfig> = {

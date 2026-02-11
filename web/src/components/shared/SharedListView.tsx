@@ -31,7 +31,7 @@ export default function SharedListView({ token }: SharedListViewProps) {
   useEffect(() => {
     const fetchList = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/shared/${token}`);
+        const response = await fetch(`http://localhost:8080/api/shared/${token}`);
 
         if (!response.ok) {
           if (response.status === 410) {
@@ -63,7 +63,7 @@ export default function SharedListView({ token }: SharedListViewProps) {
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/shared/${token}/items/${item.id}/check`, {
+      const response = await fetch(`http://localhost:8080/api/shared/${token}/items/${item.id}/check`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

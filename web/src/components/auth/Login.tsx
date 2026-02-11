@@ -53,7 +53,7 @@ export default function Login({ authConfig }: LoginProps) {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8080/auth/google';
+    window.location.href = 'http://localhost:8080/api/auth/google';
   };
 
   return (

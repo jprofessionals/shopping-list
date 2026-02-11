@@ -19,7 +19,7 @@ export default function LoginPage() {
   const location = useLocation();
 
   useEffect(() => {
-    fetch('http://localhost:8080/auth/config')
+    fetch('http://localhost:8080/api/auth/config')
       .then((res) => res.json())
       .then(setAuthConfig)
       .catch(console.error)

@@ -37,7 +37,7 @@ export default function ListDetailPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch(`http://localhost:8080/lists/${id}`, {
+        const response = await fetch(`http://localhost:8080/api/lists/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) {
@@ -75,7 +75,7 @@ export default function ListDetailPage() {
     if (!token || !id) return;
     const isPinned = list?.isPinned;
     try {
-      const response = await fetch(`http://localhost:8080/lists/${id}/pin`, {
+      const response = await fetch(`http://localhost:8080/api/lists/${id}/pin`, {
         method: isPinned ? 'DELETE' : 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });

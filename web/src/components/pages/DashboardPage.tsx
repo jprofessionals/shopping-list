@@ -22,7 +22,7 @@ export default function DashboardPage() {
       dispatch(setError(null));
 
       try {
-        const response = await fetch('http://localhost:8080/lists', {
+        const response = await fetch('http://localhost:8080/api/lists', {
           headers: { Authorization: `Bearer ${token}` },
         });
 

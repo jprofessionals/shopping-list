@@ -32,9 +32,9 @@ function formatRelativeTime(dateString: string, t: TFunction): string {
 
 function getApiBasePath(targetType: 'LIST' | 'HOUSEHOLD', targetId: string): string {
   if (targetType === 'LIST') {
-    return `http://localhost:8080/lists/${targetId}/comments`;
+    return `http://localhost:8080/api/lists/${targetId}/comments`;
   }
-  return `http://localhost:8080/households/${targetId}/comments`;
+  return `http://localhost:8080/api/households/${targetId}/comments`;
 }
 
 export default function CommentFeed({ targetType, targetId }: CommentFeedProps) {

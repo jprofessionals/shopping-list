@@ -49,7 +49,7 @@ export default function SettingsPage() {
       setError(null);
 
       try {
-        const response = await fetch('http://localhost:8080/preferences', {
+        const response = await fetch('http://localhost:8080/api/preferences', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -76,7 +76,7 @@ export default function SettingsPage() {
       if (!token || lists.length > 0) return;
 
       try {
-        const response = await fetch('http://localhost:8080/lists', {
+        const response = await fetch('http://localhost:8080/api/lists', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -112,7 +112,7 @@ export default function SettingsPage() {
       setError(null);
 
       try {
-        const response = await fetch('http://localhost:8080/preferences', {
+        const response = await fetch('http://localhost:8080/api/preferences', {
           method: 'PATCH',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -144,7 +144,7 @@ export default function SettingsPage() {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:8080/lists/${listId}/pin`, {
+      const response = await fetch(`http://localhost:8080/api/lists/${listId}/pin`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -164,7 +164,7 @@ export default function SettingsPage() {
   const handleSignOut = () => {
     const refreshToken = localStorage.getItem('refreshToken');
     if (token) {
-      fetch('http://localhost:8080/auth/logout', {
+      fetch('http://localhost:8080/api/auth/logout', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,

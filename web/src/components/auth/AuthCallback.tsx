@@ -25,7 +25,7 @@ export default function AuthCallback() {
         localStorage.setItem('refreshToken', refreshToken);
       }
 
-      fetch('http://localhost:8080/auth/me', {
+      fetch('http://localhost:8080/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => {

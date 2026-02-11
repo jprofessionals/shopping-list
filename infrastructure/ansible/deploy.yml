@@ -17,7 +17,7 @@
     jwt_secret_file: "{{ app_dir }}/.jwt_secret"
     valkey_host: "127.0.0.1"
     valkey_port: 6379
-    google_callback_url: "https://{{ app_domain }}/auth/google/callback"
+    google_callback_url: "https://{{ app_domain }}/api/auth/google/callback"
 
   tasks:
     - name: Check if JWT secret exists
@@ -73,8 +73,7 @@
         dest: "/etc/caddy/sites/{{ app_name }}.caddy"
         content: |
           {{ app_domain }} {
-              @backend path /auth/* /households/* /lists/* /shared/* /ws /health /swagger* /activity/* /suggestions/* /preferences/* /asyncapi*
-              handle @backend {
+              handle /api/* {
                   reverse_proxy localhost:{{ backend_port }}
               }
               handle {

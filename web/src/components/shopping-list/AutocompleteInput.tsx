@@ -72,7 +72,7 @@ export default function AutocompleteInput({
       setIsLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:8080/items/suggestions?q=${encodeURIComponent(debouncedValue)}&limit=10`,
+          `http://localhost:8080/api/items/suggestions?q=${encodeURIComponent(debouncedValue)}&limit=10`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

@@ -57,7 +57,7 @@ export default function ShoppingListView({
   // Fetch smart parsing preference
   useEffect(() => {
     if (!token) return;
-    fetch('http://localhost:8080/preferences', {
+    fetch('http://localhost:8080/api/preferences', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : null))
@@ -81,7 +81,7 @@ export default function ShoppingListView({
     if (!token || isRefreshing) return;
     setIsRefreshing(true);
     try {
-      const response = await fetch(`http://localhost:8080/lists/${listId}/items`, {
+      const response = await fetch(`http://localhost:8080/api/lists/${listId}/items`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -144,7 +144,7 @@ export default function ShoppingListView({
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/lists/${listId}/items`, {
+      const response = await fetch(`http://localhost:8080/api/lists/${listId}/items`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,7 +175,7 @@ export default function ShoppingListView({
 
       try {
         const response = await fetch(
-          `http://localhost:8080/lists/${listId}/items/${item.id}/check`,
+          `http://localhost:8080/api/lists/${listId}/items/${item.id}/check`,
           {
             method: 'POST',
             headers: {
@@ -208,7 +208,7 @@ export default function ShoppingListView({
       if (!token) return;
 
       try {
-        const response = await fetch(`http://localhost:8080/lists/${listId}/items/${itemId}`, {
+        const response = await fetch(`http://localhost:8080/api/lists/${listId}/items/${itemId}`, {
           method: 'DELETE',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -230,7 +230,7 @@ export default function ShoppingListView({
       if (!token) return;
 
       try {
-        const response = await fetch(`http://localhost:8080/lists/${listId}/items/${item.id}`, {
+        const response = await fetch(`http://localhost:8080/api/lists/${listId}/items/${item.id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -264,7 +264,7 @@ export default function ShoppingListView({
         unit: item.unit,
       }));
 
-      const response = await fetch(`http://localhost:8080/lists/${listId}/items/bulk`, {
+      const response = await fetch(`http://localhost:8080/api/lists/${listId}/items/bulk`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -288,7 +288,7 @@ export default function ShoppingListView({
 
     setIsClearingChecked(true);
     try {
-      const response = await fetch(`http://localhost:8080/lists/${listId}/items/checked`, {
+      const response = await fetch(`http://localhost:8080/api/lists/${listId}/items/checked`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,

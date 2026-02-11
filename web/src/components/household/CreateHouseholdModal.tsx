@@ -22,7 +22,7 @@ export default function CreateHouseholdModal({ isOpen, onClose }: CreateHousehol
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:8080/households', {
+      const response = await fetch('http://localhost:8080/api/households', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

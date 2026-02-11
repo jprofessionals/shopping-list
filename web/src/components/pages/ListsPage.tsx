@@ -16,7 +16,7 @@ export default function ListsPage() {
       if (!token) return;
       dispatch(setListsLoading(true));
       try {
-        const response = await fetch('http://localhost:8080/lists', {
+        const response = await fetch('http://localhost:8080/api/lists', {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.ok) {
@@ -45,7 +45,7 @@ export default function ListsPage() {
     async (listId: string) => {
       if (!token) return;
       try {
-        const response = await fetch(`http://localhost:8080/lists/${listId}/pin`, {
+        const response = await fetch(`http://localhost:8080/api/lists/${listId}/pin`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -63,7 +63,7 @@ export default function ListsPage() {
     async (listId: string) => {
       if (!token) return;
       try {
-        const response = await fetch(`http://localhost:8080/lists/${listId}/pin`, {
+        const response = await fetch(`http://localhost:8080/api/lists/${listId}/pin`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
         });

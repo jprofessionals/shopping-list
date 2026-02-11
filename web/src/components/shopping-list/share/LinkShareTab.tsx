@@ -28,7 +28,7 @@ export default function LinkShareTab({ listId, onClose }: LinkShareTabProps) {
     setIsSubmitting(true);
     setError(null);
     try {
-      const response = await fetch(`http://localhost:8080/lists/${listId}/shares`, {
+      const response = await fetch(`http://localhost:8080/api/lists/${listId}/shares`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

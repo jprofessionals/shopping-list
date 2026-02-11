@@ -101,7 +101,7 @@ describe('AutocompleteInput', () => {
 
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8080/items/suggestions?q=pot&limit=10',
+        'http://localhost:8080/api/items/suggestions?q=pot&limit=10',
         expect.objectContaining({
           headers: expect.objectContaining({
             Authorization: 'Bearer test-token',

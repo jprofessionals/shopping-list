@@ -21,7 +21,7 @@ export default function useTheme() {
   useEffect(() => {
     if (!token) return;
 
-    fetch('http://localhost:8080/preferences', {
+    fetch('http://localhost:8080/api/preferences', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
