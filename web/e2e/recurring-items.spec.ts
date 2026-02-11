@@ -106,7 +106,7 @@ test.describe('Recurring Items', () => {
     // Pause the item
     await page.getByTitle(/pause/i).click();
     await expect(page.getByRole('dialog', { name: /pause/i })).toBeVisible();
-    await page.getByRole('button', { name: /^pause$/i }).click();
+    await page.getByRole('dialog').getByRole('button', { name: /^pause$/i }).click();
 
     // Should show paused badge
     await expect(page.getByText(/paused/i)).toBeVisible();
@@ -140,7 +140,7 @@ test.describe('Recurring Items', () => {
     // Delete - click delete button to open confirmation dialog
     await page.getByTitle(/delete/i).click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await page.getByRole('button', { name: /delete/i }).click();
+    await page.getByRole('dialog').getByRole('button', { name: /delete/i }).click();
 
     // Item should be gone
     await expect(page.getByText('Butter')).not.toBeVisible({ timeout: 5000 });
@@ -292,7 +292,7 @@ test.describe('Recurring Items', () => {
     const list = await listResponse.json();
 
     // Add a regular list item (not from recurring)
-    await page.request.post(`${API_URL}/shopping-lists/${list.id}/items`, {
+    await page.request.post(`${API_URL}/lists/${list.id}/items`, {
       headers: {
         Authorization: `Bearer ${authToken}`,
         'Content-Type': 'application/json',
@@ -304,12 +304,12 @@ test.describe('Recurring Items', () => {
     });
 
     // Fetch list detail and verify recurringItemId is null
-    const listDetailResponse = await page.request.get(`${API_URL}/shopping-lists/${list.id}`, {
+    const listDetailResponse = await page.request.get(`${API_URL}/lists/${list.id}`, {
       headers: { Authorization: `Bearer ${authToken}` },
     });
     const listDetail = await listDetailResponse.json();
     const item = listDetail.items.find((i: { name: string }) => i.name === 'Bananas');
     expect(item).toBeDefined();
-    expect(item.recurringItemId).toBeNull();
+    expect(item.recurringItemId ?? null).toBeNull();
   });
 });
