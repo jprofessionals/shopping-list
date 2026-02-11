@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAppSelector } from '../store/hooks';
+import { apiFetch } from '../services/api';
 
 type Theme = 'system' | 'light' | 'dark';
 
@@ -21,9 +22,7 @@ export default function useTheme() {
   useEffect(() => {
     if (!token) return;
 
-    fetch('http://localhost:8080/api/preferences', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch('/preferences')
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch preferences');
         return res.json();

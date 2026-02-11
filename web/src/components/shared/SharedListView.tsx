@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LoadingSpinner, ErrorAlert, EmptyState, Badge } from '../common';
+import { API_BASE } from '../../services/api';
 
 interface SharedListViewProps {
   token: string;
@@ -31,7 +32,7 @@ export default function SharedListView({ token }: SharedListViewProps) {
   useEffect(() => {
     const fetchList = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/shared/${token}`);
+        const response = await fetch(`${API_BASE}/shared/${token}`);
 
         if (!response.ok) {
           if (response.status === 410) {
@@ -63,7 +64,7 @@ export default function SharedListView({ token }: SharedListViewProps) {
     }
 
     try {
-      const url = `http://localhost:8080/api/shared/${token}/items/${item.id}/check`;
+      const url = `${API_BASE}/shared/${token}/items/${item.id}/check`;
       const response = await fetch(url, {
         method: 'POST',
         headers: {

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { removeHousehold } from '../../store/householdsSlice';
 import { LoadingSpinner, ErrorAlert, Badge } from '../common';
+import { apiFetch } from '../../services/api';
 import CommentFeed from '../comments/CommentFeed';
 
 interface Member {
@@ -44,18 +45,11 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
   const currentUser = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
 
-  const authHeaders = (extra: HeadersInit = {}): HeadersInit => ({
-    Authorization: `Bearer ${token}`,
-    ...extra,
-  });
-
   const fetchHousehold = useCallback(async () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:8080/api/households/${householdId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiFetch(`/households/${householdId}`);
 
       if (!response.ok) throw new Error('Failed to fetch household');
 
@@ -76,9 +70,8 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
     if (!token || !confirm(t('householdDetail.confirmDelete'))) return;
 
     try {
-      const response = await fetch(`http://localhost:8080/api/households/${householdId}`, {
+      const response = await apiFetch(`/households/${householdId}`, {
         method: 'DELETE',
-        headers: authHeaders(),
       });
 
       if (!response.ok) throw new Error('Failed to delete household');
@@ -98,9 +91,9 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
     setAddError(null);
 
     try {
-      const response = await fetch(`http://localhost:8080/api/households/${householdId}/members`, {
+      const response = await apiFetch(`/households/${householdId}/members`, {
         method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: addEmail.trim(), role: addRole }),
       });
 
@@ -129,13 +122,9 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
     if (!token || !confirm(t('householdDetail.confirmRemoveMember', { name: displayName }))) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/households/${householdId}/members/${accountId}`,
-        {
-          method: 'DELETE',
-          headers: authHeaders(),
-        }
-      );
+      const response = await apiFetch(`/households/${householdId}/members/${accountId}`, {
+        method: 'DELETE',
+      });
 
       if (!response.ok) throw new Error('Failed to remove member');
 
@@ -149,14 +138,11 @@ export default function HouseholdDetail({ householdId, onBack }: HouseholdDetail
     if (!token) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/households/${householdId}/members/${accountId}`,
-        {
-          method: 'PATCH',
-          headers: authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({ role: newRole }),
-        }
-      );
+      const response = await apiFetch(`/households/${householdId}/members/${accountId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole }),
+      });
 
       if (!response.ok) throw new Error('Failed to update role');
 

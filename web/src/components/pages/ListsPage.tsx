@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setLists, setLoading as setListsLoading } from '../../store/listsSlice';
+import { apiFetch } from '../../services/api';
 import { ShoppingListsPage, CreateListModal } from '../shopping-list';
 
 export default function ListsPage() {
@@ -16,9 +17,7 @@ export default function ListsPage() {
       if (!token) return;
       dispatch(setListsLoading(true));
       try {
-        const response = await fetch('http://localhost:8080/api/lists', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch('/lists');
         if (response.ok) {
           const data = await response.json();
           dispatch(setLists(data));
@@ -45,9 +44,8 @@ export default function ListsPage() {
     async (listId: string) => {
       if (!token) return;
       try {
-        const response = await fetch(`http://localhost:8080/api/lists/${listId}/pin`, {
+        const response = await apiFetch(`/lists/${listId}/pin`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
         });
         if (response.ok) {
           dispatch(setLists(lists.map((l) => (l.id === listId ? { ...l, isPinned: true } : l))));
@@ -63,9 +61,8 @@ export default function ListsPage() {
     async (listId: string) => {
       if (!token) return;
       try {
-        const response = await fetch(`http://localhost:8080/api/lists/${listId}/pin`, {
+        const response = await apiFetch(`/lists/${listId}/pin`, {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
         });
         if (response.ok) {
           dispatch(setLists(lists.map((l) => (l.id === listId ? { ...l, isPinned: false } : l))));

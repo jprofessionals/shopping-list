@@ -218,12 +218,7 @@ describe('ShoppingListView', () => {
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
           'http://localhost:8080/api/lists/list-1/items/checked',
-          expect.objectContaining({
-            method: 'DELETE',
-            headers: expect.objectContaining({
-              Authorization: 'Bearer test-token',
-            }),
-          })
+          expect.objectContaining({ method: 'DELETE' })
         );
       });
     });
@@ -312,13 +307,7 @@ describe('ShoppingListView', () => {
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
           'http://localhost:8080/api/lists/list-1/items/bulk',
-          expect.objectContaining({
-            method: 'POST',
-            headers: expect.objectContaining({
-              'Content-Type': 'application/json',
-              Authorization: 'Bearer test-token',
-            }),
-          })
+          expect.objectContaining({ method: 'POST' })
         );
       });
     });

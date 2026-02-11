@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useAppDispatch } from '../../store/hooks';
 import { loginStart, loginSuccess, loginFailure } from '../../store/authSlice';
+import { apiFetch } from '../../services/api';
 import { LoadingSpinner } from '../common';
 
 export default function AuthCallback() {
@@ -25,9 +26,7 @@ export default function AuthCallback() {
         localStorage.setItem('refreshToken', refreshToken);
       }
 
-      fetch('http://localhost:8080/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      apiFetch('/auth/me')
         .then((res) => {
           if (!res.ok) throw new Error('Failed to fetch user');
           return res.json();

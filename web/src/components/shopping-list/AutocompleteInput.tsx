@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useAppSelector } from '../../store/hooks';
 import { parseItemInput, formatParsedItem, type ParsedItem } from '../../utils/parseItemInput';
+import { apiFetch } from '../../services/api';
 
 export interface ItemSuggestion {
   name: string;
@@ -71,13 +72,8 @@ export default function AutocompleteInput({
 
       setIsLoading(true);
       try {
-        const response = await fetch(
-          `http://localhost:8080/api/items/suggestions?q=${encodeURIComponent(debouncedValue)}&limit=10`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        const response = await apiFetch(
+          `/items/suggestions?q=${encodeURIComponent(debouncedValue)}&limit=10`
         );
 
         if (response.ok) {

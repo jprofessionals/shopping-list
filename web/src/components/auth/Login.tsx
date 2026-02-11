@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { loginStart, loginSuccess, loginFailure } from '../../store/authSlice';
 import { ErrorAlert } from '../common';
+import { API_BASE } from '../../services/api';
 
 interface AuthConfig {
   googleEnabled: boolean;
@@ -32,7 +33,7 @@ export default function Login({ authConfig }: LoginProps) {
       const endpoint = isRegister ? '/auth/register' : '/auth/login';
       const body = isRegister ? { email, password, displayName } : { email, password };
 
-      const response = await fetch(`http://localhost:8080/api${endpoint}`, {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -53,7 +54,7 @@ export default function Login({ authConfig }: LoginProps) {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8080/api/auth/google';
+    window.location.href = `${API_BASE}/auth/google`;
   };
 
   return (

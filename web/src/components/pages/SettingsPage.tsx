@@ -5,6 +5,7 @@ import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { logout } from '../../store/authSlice';
 import { setLists } from '../../store/listsSlice';
 import { LoadingSpinner, ErrorAlert } from '../common';
+import { apiFetch } from '../../services/api';
 import { languageNames } from '../../i18n/i18n';
 
 interface Preferences {
@@ -49,9 +50,7 @@ export default function SettingsPage() {
       setError(null);
 
       try {
-        const response = await fetch('http://localhost:8080/api/preferences', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch('/preferences');
 
         if (response.ok) {
           const data = await response.json();
@@ -76,9 +75,7 @@ export default function SettingsPage() {
       if (!token || lists.length > 0) return;
 
       try {
-        const response = await fetch('http://localhost:8080/api/lists', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch('/lists');
 
         if (response.ok) {
           const data = await response.json();
@@ -112,12 +109,9 @@ export default function SettingsPage() {
       setError(null);
 
       try {
-        const response = await fetch('http://localhost:8080/api/preferences', {
+        const response = await apiFetch('/preferences', {
           method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ [key]: value }),
         });
 
@@ -144,9 +138,8 @@ export default function SettingsPage() {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:8080/api/lists/${listId}/pin`, {
+      const response = await apiFetch(`/lists/${listId}/pin`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) {
@@ -164,12 +157,9 @@ export default function SettingsPage() {
   const handleSignOut = () => {
     const refreshToken = localStorage.getItem('refreshToken');
     if (token) {
-      fetch('http://localhost:8080/api/auth/logout', {
+      apiFetch('/auth/logout', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: refreshToken ? JSON.stringify({ refreshToken }) : undefined,
       }).catch(() => {
         // Ignore logout API errors

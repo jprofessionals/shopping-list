@@ -16,6 +16,7 @@ import { EmptyState, ErrorAlert, useToast } from '../common';
 import ListItemRow from './ListItemRow';
 import AutocompleteInput, { type ItemSuggestion } from './AutocompleteInput';
 import { parseItemInput } from '../../utils/parseItemInput';
+import { apiFetch } from '../../services/api';
 import CommentFeed from '../comments/CommentFeed';
 
 const UNDO_DURATION = 30000; // 30 seconds for undo
@@ -57,9 +58,7 @@ export default function ShoppingListView({
   // Fetch smart parsing preference
   useEffect(() => {
     if (!token) return;
-    fetch('http://localhost:8080/api/preferences', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch('/preferences')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.smartParsingEnabled != null) {
@@ -81,9 +80,7 @@ export default function ShoppingListView({
     if (!token || isRefreshing) return;
     setIsRefreshing(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/lists/${listId}/items`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiFetch(`/lists/${listId}/items`);
       if (response.ok) {
         const refreshedItems: ListItem[] = await response.json();
         dispatch(setItems(refreshedItems));
@@ -144,12 +141,9 @@ export default function ShoppingListView({
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/lists/${listId}/items`, {
+      const response = await apiFetch(`/lists/${listId}/items`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: finalName,
           quantity: finalQuantity,
@@ -174,17 +168,11 @@ export default function ShoppingListView({
       if (!token) return;
 
       try {
-        const response = await fetch(
-          `http://localhost:8080/api/lists/${listId}/items/${item.id}/check`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ isChecked: !item.isChecked }),
-          }
-        );
+        const response = await apiFetch(`/lists/${listId}/items/${item.id}/check`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isChecked: !item.isChecked }),
+        });
 
         if (!response.ok) throw new Error('Failed to toggle item');
 
@@ -208,11 +196,8 @@ export default function ShoppingListView({
       if (!token) return;
 
       try {
-        const response = await fetch(`http://localhost:8080/api/lists/${listId}/items/${itemId}`, {
+        const response = await apiFetch(`/lists/${listId}/items/${itemId}`, {
           method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         });
 
         if (!response.ok) throw new Error('Failed to delete item');
@@ -230,12 +215,9 @@ export default function ShoppingListView({
       if (!token) return;
 
       try {
-        const response = await fetch(`http://localhost:8080/api/lists/${listId}/items/${item.id}`, {
+        const response = await apiFetch(`/lists/${listId}/items/${item.id}`, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: item.name,
             quantity: newQuantity,
@@ -264,12 +246,9 @@ export default function ShoppingListView({
         unit: item.unit,
       }));
 
-      const response = await fetch(`http://localhost:8080/api/lists/${listId}/items/bulk`, {
+      const response = await apiFetch(`/lists/${listId}/items/bulk`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: itemsToRestore }),
       });
 
@@ -288,11 +267,8 @@ export default function ShoppingListView({
 
     setIsClearingChecked(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/lists/${listId}/items/checked`, {
+      const response = await apiFetch(`/lists/${listId}/items/checked`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       });
 
       if (!response.ok) throw new Error('Failed to clear checked items');

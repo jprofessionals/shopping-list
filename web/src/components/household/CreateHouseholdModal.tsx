@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { addHousehold, setError } from '../../store/householdsSlice';
 import { Modal, ModalActions, PrimaryButton, SecondaryButton } from '../common';
+import { apiFetch } from '../../services/api';
 
 interface CreateHouseholdModalProps {
   isOpen: boolean;
@@ -22,12 +23,9 @@ export default function CreateHouseholdModal({ isOpen, onClose }: CreateHousehol
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:8080/api/households', {
+      const response = await apiFetch('/households', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim() }),
       });
 

@@ -78,9 +78,7 @@ describe('DashboardPage', () => {
     render(<DashboardPage />, { store });
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/lists', {
-        headers: { Authorization: 'Bearer test-token' },
-      });
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/lists', expect.anything());
     });
   });
 

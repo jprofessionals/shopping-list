@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '../../store/hooks';
+import { API_BASE } from '../../services/api';
 import { Login } from '../auth';
 import { LoadingSpinner } from '../common';
 
@@ -19,7 +20,7 @@ export default function LoginPage() {
   const location = useLocation();
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/auth/config')
+    fetch(`${API_BASE}/auth/config`)
       .then((res) => res.json())
       .then(setAuthConfig)
       .catch(console.error)

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { addList, setError } from '../../store/listsSlice';
 import { Modal, ModalActions, PrimaryButton, SecondaryButton } from '../common';
+import { apiFetch } from '../../services/api';
 
 interface CreateListModalProps {
   onClose: () => void;
@@ -24,12 +25,9 @@ export default function CreateListModal({ onClose }: CreateListModalProps) {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:8080/api/lists', {
+      const response = await apiFetch('/lists', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
           householdId: householdId || null,

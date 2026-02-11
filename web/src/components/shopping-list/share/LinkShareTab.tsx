@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '../../../store/hooks';
 import { ErrorAlert, ModalActions, PrimaryButton, SecondaryButton } from '../../common';
+import { apiFetch } from '../../../services/api';
 import LinkDisplay from './LinkDisplay';
 
 type Permission = 'READ' | 'CHECK' | 'WRITE';
@@ -28,12 +29,9 @@ export default function LinkShareTab({ listId, onClose }: LinkShareTabProps) {
     setIsSubmitting(true);
     setError(null);
     try {
-      const response = await fetch(`http://localhost:8080/api/lists/${listId}/shares`, {
+      const response = await apiFetch(`/lists/${listId}/shares`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'LINK',
           permission,

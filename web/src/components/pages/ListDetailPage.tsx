@@ -8,6 +8,7 @@ import {
   setCurrentList,
   type ShoppingList,
 } from '../../store/listsSlice';
+import { apiFetch } from '../../services/api';
 import { ShoppingListView, ShareListModal } from '../shopping-list';
 import { LoadingSpinner, ErrorAlert } from '../common';
 
@@ -37,9 +38,7 @@ export default function ListDetailPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch(`http://localhost:8080/api/lists/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch(`/lists/${id}`);
         if (!response.ok) {
           throw new Error('Failed to load list');
         }
@@ -75,9 +74,8 @@ export default function ListDetailPage() {
     if (!token || !id) return;
     const isPinned = list?.isPinned;
     try {
-      const response = await fetch(`http://localhost:8080/api/lists/${id}/pin`, {
+      const response = await apiFetch(`/lists/${id}/pin`, {
         method: isPinned ? 'DELETE' : 'POST',
-        headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
         dispatch(setLists(lists.map((l) => (l.id === id ? { ...l, isPinned: !isPinned } : l))));

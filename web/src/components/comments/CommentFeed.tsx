@@ -9,6 +9,7 @@ import {
   removeComment,
   type Comment,
 } from '../../store/commentsSlice';
+import { apiFetch } from '../../services/api';
 
 interface CommentFeedProps {
   targetType: 'LIST' | 'HOUSEHOLD';
@@ -30,11 +31,11 @@ function formatRelativeTime(dateString: string, t: TFunction): string {
   return t('comments.time.daysAgo', { count: diffDays });
 }
 
-function getApiBasePath(targetType: 'LIST' | 'HOUSEHOLD', targetId: string): string {
+function getApiPath(targetType: 'LIST' | 'HOUSEHOLD', targetId: string): string {
   if (targetType === 'LIST') {
-    return `http://localhost:8080/api/lists/${targetId}/comments`;
+    return `/lists/${targetId}/comments`;
   }
-  return `http://localhost:8080/api/households/${targetId}/comments`;
+  return `/households/${targetId}/comments`;
 }
 
 export default function CommentFeed({ targetType, targetId }: CommentFeedProps) {
@@ -58,9 +59,7 @@ export default function CommentFeed({ targetType, targetId }: CommentFeedProps) 
 
     const fetchComments = async () => {
       try {
-        const response = await fetch(getApiBasePath(targetType, targetId), {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch(getApiPath(targetType, targetId));
         if (response.ok) {
           const data = await response.json();
           if (Array.isArray(data)) {
@@ -104,12 +103,9 @@ export default function CommentFeed({ targetType, targetId }: CommentFeedProps) 
       setNewText('');
 
       try {
-        const response = await fetch(getApiBasePath(targetType, targetId), {
+        const response = await apiFetch(getApiPath(targetType, targetId), {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text }),
         });
 
@@ -134,12 +130,9 @@ export default function CommentFeed({ targetType, targetId }: CommentFeedProps) 
       if (!text || !token) return;
 
       try {
-        const response = await fetch(`${getApiBasePath(targetType, targetId)}/${commentId}`, {
+        const response = await apiFetch(`${getApiPath(targetType, targetId)}/${commentId}`, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text }),
         });
 
@@ -169,9 +162,8 @@ export default function CommentFeed({ targetType, targetId }: CommentFeedProps) 
       if (!token || !confirm(t('comments.confirmDelete'))) return;
 
       try {
-        const response = await fetch(`${getApiBasePath(targetType, targetId)}/${commentId}`, {
+        const response = await apiFetch(`${getApiPath(targetType, targetId)}/${commentId}`, {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
         });
 
         if (!response.ok) throw new Error('Failed to delete comment');

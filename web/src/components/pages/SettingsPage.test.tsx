@@ -91,7 +91,7 @@ describe('SettingsPage', () => {
   beforeEach(() => {
     mockFetch.mockReset();
     mockNavigate.mockReset();
-    mockLocalStorage.store = {};
+    mockLocalStorage.store = { token: 'test-token' };
     vi.stubGlobal('localStorage', mockLocalStorage);
   });
 
@@ -234,14 +234,13 @@ describe('SettingsPage', () => {
     await userEvent.click(toggle);
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/preferences', {
-        method: 'PATCH',
-        headers: {
-          Authorization: 'Bearer test-token',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ smartParsingEnabled: false }),
-      });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:8080/api/preferences',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({ smartParsingEnabled: false }),
+        })
+      );
     });
   });
 
@@ -267,14 +266,13 @@ describe('SettingsPage', () => {
     fireEvent.change(select, { target: { value: '2' } });
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/preferences', {
-        method: 'PATCH',
-        headers: {
-          Authorization: 'Bearer test-token',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ defaultQuantity: 2 }),
-      });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:8080/api/preferences',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({ defaultQuantity: 2 }),
+        })
+      );
     });
   });
 
@@ -300,14 +298,13 @@ describe('SettingsPage', () => {
     fireEvent.change(select, { target: { value: 'dark' } });
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/preferences', {
-        method: 'PATCH',
-        headers: {
-          Authorization: 'Bearer test-token',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ theme: 'dark' }),
-      });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:8080/api/preferences',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({ theme: 'dark' }),
+        })
+      );
     });
   });
 
@@ -396,10 +393,10 @@ describe('SettingsPage', () => {
     await userEvent.click(unpinButton);
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/lists/list-1/pin', {
-        method: 'DELETE',
-        headers: { Authorization: 'Bearer test-token' },
-      });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:8080/api/lists/list-1/pin',
+        expect.objectContaining({ method: 'DELETE' })
+      );
     });
 
     // Check that the list was updated in state
@@ -466,9 +463,7 @@ describe('SettingsPage', () => {
     render(<SettingsPage />, { store });
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/lists', {
-        headers: { Authorization: 'Bearer test-token' },
-      });
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/lists', expect.anything());
     });
   });
 

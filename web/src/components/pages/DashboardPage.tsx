@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setLists, setLoading as setListsLoading, setError } from '../../store/listsSlice';
+import { apiFetch } from '../../services/api';
 import PinnedListsRow from '../dashboard/PinnedListsRow';
 import NeedsAttentionList from '../dashboard/NeedsAttentionList';
 
@@ -22,9 +23,7 @@ export default function DashboardPage() {
       dispatch(setError(null));
 
       try {
-        const response = await fetch('http://localhost:8080/api/lists', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch('/lists');
 
         if (response.ok) {
           const data = await response.json();
