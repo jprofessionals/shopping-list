@@ -1,16 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
-  setRecurringItems,
-  addRecurringItem,
+  fetchRecurringItems,
+  createRecurringItem,
   updateRecurringItem,
-  removeRecurringItem,
-  setRecurringLoading,
-  setRecurringError,
+  deleteRecurringItem,
+  pauseRecurringItem,
+  resumeRecurringItem,
   type RecurringItem,
 } from '../../store/recurringItemsSlice';
-import { apiFetch } from '../../services/api';
 import { LoadingSpinner, ErrorAlert } from '../common';
 
 interface RecurringItemsListProps {
@@ -24,6 +23,12 @@ const FREQUENCY_LABELS: Record<string, string> = {
   MONTHLY: 'recurring.frequencyMonthly',
 };
 
+function formatFrequency(frequency: string, t: (key: string) => string): string {
+  const key = FREQUENCY_LABELS[frequency];
+  if (key) return t(key);
+  return frequency.charAt(0) + frequency.slice(1).toLowerCase();
+}
+
 export default function RecurringItemsList({ householdId }: RecurringItemsListProps) {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
@@ -32,49 +37,34 @@ export default function RecurringItemsList({ householdId }: RecurringItemsListPr
   const [editingItem, setEditingItem] = useState<RecurringItem | null>(null);
   const [showPauseDialog, setShowPauseDialog] = useState<string | null>(null);
   const [pauseUntil, setPauseUntil] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
 
   const [formName, setFormName] = useState('');
   const [formQuantity, setFormQuantity] = useState('1');
   const [formUnit, setFormUnit] = useState('');
   const [formFrequency, setFormFrequency] = useState('WEEKLY');
 
-  const fetchItems = useCallback(async () => {
-    dispatch(setRecurringLoading(true));
-    try {
-      const response = await apiFetch(`/households/${householdId}/recurring-items`);
-      if (!response.ok) throw new Error('Failed to fetch recurring items');
-      const data = await response.json();
-      dispatch(setRecurringItems(Array.isArray(data) ? data : []));
-    } catch (err) {
-      dispatch(setRecurringError(err instanceof Error ? err.message : 'An error occurred'));
-    } finally {
-      dispatch(setRecurringLoading(false));
-    }
-  }, [householdId, dispatch]);
-
   useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+    dispatch(fetchRecurringItems(householdId));
+  }, [householdId, dispatch]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await apiFetch(`/households/${householdId}/recurring-items`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formName.trim(),
-          quantity: parseFloat(formQuantity) || 1,
-          unit: formUnit.trim() || null,
-          frequency: formFrequency,
-        }),
-      });
-      if (!response.ok) throw new Error('Failed to create recurring item');
-      const item = await response.json();
-      dispatch(addRecurringItem(item));
+      await dispatch(
+        createRecurringItem({
+          householdId,
+          data: {
+            name: formName.trim(),
+            quantity: parseFloat(formQuantity) || 1,
+            unit: formUnit.trim() || null,
+            frequency: formFrequency,
+          },
+        })
+      ).unwrap();
       resetForm();
-    } catch (err) {
-      dispatch(setRecurringError(err instanceof Error ? err.message : 'Failed to create'));
+    } catch {
+      // Error state handled by slice
     }
   };
 
@@ -82,72 +72,51 @@ export default function RecurringItemsList({ householdId }: RecurringItemsListPr
     e.preventDefault();
     if (!editingItem) return;
     try {
-      const response = await apiFetch(
-        `/households/${householdId}/recurring-items/${editingItem.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+      await dispatch(
+        updateRecurringItem({
+          householdId,
+          itemId: editingItem.id,
+          data: {
             name: formName.trim(),
             quantity: parseFloat(formQuantity) || 1,
             unit: formUnit.trim() || null,
             frequency: formFrequency,
-          }),
-        }
-      );
-      if (!response.ok) throw new Error('Failed to update recurring item');
-      const updated = await response.json();
-      dispatch(updateRecurringItem(updated));
+          },
+        })
+      ).unwrap();
       resetForm();
-    } catch (err) {
-      dispatch(setRecurringError(err instanceof Error ? err.message : 'Failed to update'));
+    } catch {
+      // Error state handled by slice
     }
   };
 
-  const handleDelete = async (itemId: string) => {
-    if (!confirm(t('recurring.confirmDelete'))) return;
+  const handleDelete = async () => {
+    if (!showDeleteDialog) return;
     try {
-      const response = await apiFetch(`/households/${householdId}/recurring-items/${itemId}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Failed to delete');
-      dispatch(removeRecurringItem(itemId));
-    } catch (err) {
-      dispatch(setRecurringError(err instanceof Error ? err.message : 'Failed to delete'));
+      await dispatch(deleteRecurringItem({ householdId, itemId: showDeleteDialog })).unwrap();
+      setShowDeleteDialog(null);
+    } catch {
+      // Error state handled by slice
     }
   };
 
   const handlePause = async (itemId: string) => {
     try {
-      const response = await apiFetch(
-        `/households/${householdId}/recurring-items/${itemId}/pause`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ until: pauseUntil || null }),
-        }
-      );
-      if (!response.ok) throw new Error('Failed to pause');
-      const updated = await response.json();
-      dispatch(updateRecurringItem(updated));
+      await dispatch(
+        pauseRecurringItem({ householdId, itemId, until: pauseUntil || null })
+      ).unwrap();
       setShowPauseDialog(null);
       setPauseUntil('');
-    } catch (err) {
-      dispatch(setRecurringError(err instanceof Error ? err.message : 'Failed to pause'));
+    } catch {
+      // Error state handled by slice
     }
   };
 
   const handleResume = async (itemId: string) => {
     try {
-      const response = await apiFetch(
-        `/households/${householdId}/recurring-items/${itemId}/resume`,
-        { method: 'POST' }
-      );
-      if (!response.ok) throw new Error('Failed to resume');
-      const updated = await response.json();
-      dispatch(updateRecurringItem(updated));
-    } catch (err) {
-      dispatch(setRecurringError(err instanceof Error ? err.message : 'Failed to resume'));
+      await dispatch(resumeRecurringItem({ householdId, itemId })).unwrap();
+    } catch {
+      // Error state handled by slice
     }
   };
 
@@ -317,8 +286,7 @@ export default function RecurringItemsList({ householdId }: RecurringItemsListPr
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {item.quantity}
-                    {item.unit ? ` ${item.unit}` : ''} &middot;{' '}
-                    {t(FREQUENCY_LABELS[item.frequency] || item.frequency)}
+                    {item.unit ? ` ${item.unit}` : ''} &middot; {formatFrequency(item.frequency, t)}
                     {item.lastPurchased &&
                       ` · ${t('recurring.lastPurchased', { date: item.lastPurchased })}`}
                   </p>
@@ -373,7 +341,7 @@ export default function RecurringItemsList({ householdId }: RecurringItemsListPr
                     </svg>
                   </button>
                   <button
-                    onClick={() => handleDelete(item.id)}
+                    onClick={() => setShowDeleteDialog(item.id)}
                     className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
                     title={t('common.delete')}
                   >
@@ -398,11 +366,18 @@ export default function RecurringItemsList({ householdId }: RecurringItemsListPr
       )}
 
       {showPauseDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => {
+            setShowPauseDialog(null);
+            setPauseUntil('');
+          }}
+        >
           <div
             className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800"
             role="dialog"
             aria-label={t('recurring.pauseTitle')}
+            onClick={(e) => e.stopPropagation()}
           >
             <h4 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
               {t('recurring.pauseTitle')}
@@ -437,6 +412,41 @@ export default function RecurringItemsList({ householdId }: RecurringItemsListPr
                   setShowPauseDialog(null);
                   setPauseUntil('');
                 }}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteDialog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setShowDeleteDialog(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800"
+            role="dialog"
+            aria-label={t('recurring.confirmDelete')}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h4 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+              {t('recurring.confirmDelete')}
+            </h4>
+            <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+              {t('recurring.confirmDeleteDescription')}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleDelete}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500"
+              >
+                {t('common.delete')}
+              </button>
+              <button
+                onClick={() => setShowDeleteDialog(null)}
                 className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
               >
                 {t('common.cancel')}

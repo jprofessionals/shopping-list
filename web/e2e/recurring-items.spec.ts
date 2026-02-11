@@ -137,11 +137,10 @@ test.describe('Recurring Items', () => {
     await page.getByText(/test household/i).click();
     await expect(page.getByText('Butter')).toBeVisible();
 
-    // Handle confirm dialog
-    page.on('dialog', (dialog) => dialog.accept());
-
-    // Delete
+    // Delete - click delete button to open confirmation dialog
     await page.getByTitle(/delete/i).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('button', { name: /delete/i }).click();
 
     // Item should be gone
     await expect(page.getByText('Butter')).not.toBeVisible({ timeout: 5000 });
@@ -279,7 +278,7 @@ test.describe('Recurring Items', () => {
 
   test('regular list items have null recurringItemId in response', async ({ page }) => {
     // Create a shopping list
-    const listResponse = await page.request.post(`${API_URL}/shopping-lists`, {
+    const listResponse = await page.request.post(`${API_URL}/lists`, {
       headers: {
         Authorization: `Bearer ${authToken}`,
         'Content-Type': 'application/json',

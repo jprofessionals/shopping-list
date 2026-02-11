@@ -8,6 +8,7 @@ import authReducer from './store/authSlice';
 import householdsReducer from './store/householdsSlice';
 import listsReducer from './store/listsSlice';
 import websocketReducer from './store/websocketSlice';
+import recurringItemsReducer from './store/recurringItemsSlice';
 import { ToastProvider } from './components/common';
 import i18nForTests from './test/i18nForTests';
 
@@ -18,6 +19,7 @@ const createTestStore = (preloadedState = {}) =>
       households: householdsReducer,
       lists: listsReducer,
       websocket: websocketReducer,
+      recurringItems: recurringItemsReducer,
     },
     preloadedState,
   });

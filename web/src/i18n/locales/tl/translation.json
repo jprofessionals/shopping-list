@@ -335,7 +335,8 @@
     "pauseTitle": "I-pause ang Regular na Item",
     "pauseUntilLabel": "I-pause hanggang (opsyonal)",
     "pauseUntilHint": "Iwanan na walang laman para i-pause nang walang takdang panahon",
-    "confirmDelete": "Sigurado ka bang gusto mong burahin ang regular na item na ito?",
+    "confirmDelete": "Burahin ang regular na item?",
+    "confirmDeleteDescription": "Ang item na ito ay permanenteng matatanggal at hindi na gagawa ng mga listahan ng bilihin.",
     "autoListCreated": "Bagong listahan ng bilihin na ginawa: {{name}}"
   },
   "app": {

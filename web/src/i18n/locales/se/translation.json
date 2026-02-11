@@ -337,7 +337,8 @@
     "pauseTitle": "Botnjo fásta gálvu",
     "pauseUntilLabel": "Botnjo rádjai (válljejahkii)",
     "pauseUntilHint": "Guođe guorusin botnjot bissolaččat",
-    "confirmDelete": "Leatgo sihkar ahte háliidat sihkkut dán fásta gálvu?",
+    "confirmDelete": "Sihkkut fásta gálvu?",
+    "confirmDeleteDescription": "Dát gálvu sihkkojuvvo bissolaččat ja ii šat ráhkat oastinlisttuid.",
     "autoListCreated": "Ođđa oastolistu ráhkaduvvon: {{name}}"
   },
   "app": {

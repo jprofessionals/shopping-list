@@ -5,6 +5,7 @@ import householdsReducer from '../store/householdsSlice';
 import listsReducer from '../store/listsSlice';
 import websocketReducer from '../store/websocketSlice';
 import commentsReducer from '../store/commentsSlice';
+import recurringItemsReducer from '../store/recurringItemsSlice';
 import {
   initWebSocketBridge,
   cleanupWebSocketBridge,
@@ -28,6 +29,7 @@ function createTestStore(preloadedState?: Partial<RootState>) {
       lists: listsReducer,
       websocket: websocketReducer,
       comments: commentsReducer,
+      recurringItems: recurringItemsReducer,
     },
     preloadedState: preloadedState as RootState,
   });

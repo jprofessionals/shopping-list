@@ -335,7 +335,8 @@
     "pauseTitle": "Pause Recurring Item",
     "pauseUntilLabel": "Pause until (optional)",
     "pauseUntilHint": "Leave empty to pause indefinitely",
-    "confirmDelete": "Are you sure you want to delete this recurring item?",
+    "confirmDelete": "Delete recurring item?",
+    "confirmDeleteDescription": "This item will be permanently removed and will no longer generate shopping lists.",
     "autoListCreated": "New shopping list created: {{name}}"
   },
   "app": {

@@ -335,7 +335,8 @@
     "pauseTitle": "정기 구매 항목 일시정지",
     "pauseUntilLabel": "일시정지 기간 (선택사항)",
     "pauseUntilHint": "비워두면 무기한 일시정지",
-    "confirmDelete": "이 정기 구매 항목을 삭제하시겠습니까?",
+    "confirmDelete": "정기 구매 항목을 삭제하시겠습니까?",
+    "confirmDeleteDescription": "이 항목은 영구적으로 삭제되며 더 이상 장보기 목록이 생성되지 않습니다.",
     "autoListCreated": "새 장보기 목록 생성됨: {{name}}"
   },
   "app": {

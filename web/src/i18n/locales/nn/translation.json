@@ -335,7 +335,8 @@
     "pauseTitle": "Pause fast vare",
     "pauseUntilLabel": "Pause til (valfritt)",
     "pauseUntilHint": "La stå tomt for å pause på ubestemt tid",
-    "confirmDelete": "Er du sikker på at du vil slette denne faste vara?",
+    "confirmDelete": "Slette fast vare?",
+    "confirmDeleteDescription": "Denne vara vil bli permanent fjerna og vil ikkje lenger generere handlelister.",
     "autoListCreated": "Ny handleliste oppretta: {{name}}"
   },
   "app": {

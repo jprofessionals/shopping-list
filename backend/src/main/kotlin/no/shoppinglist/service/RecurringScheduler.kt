@@ -7,9 +7,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import no.shoppinglist.config.RecurringConfig
-import no.shoppinglist.domain.Household
+import no.shoppinglist.domain.HouseholdMembership
+import no.shoppinglist.domain.HouseholdMemberships
+import no.shoppinglist.domain.MembershipRole
+import no.shoppinglist.domain.RecurringFrequency
 import no.shoppinglist.domain.RecurringItem
+import no.shoppinglist.domain.RecurringItems
 import no.shoppinglist.websocket.EventBroadcaster
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
@@ -57,16 +62,30 @@ class RecurringScheduler(
             logger.info("Reactivated {} paused recurring items", reactivated)
         }
 
-        val householdIds = getAllHouseholdIds()
+        val householdIds = getHouseholdIdsWithActiveItems()
 
         for (householdId in householdIds) {
             processHousehold(householdId, today)
         }
     }
 
-    private fun getAllHouseholdIds(): List<UUID> =
+    private fun getHouseholdIdsWithActiveItems(): List<UUID> =
         transaction(db) {
-            Household.all().map { it.id.value }
+            RecurringItems
+                .select(RecurringItems.household)
+                .where { RecurringItems.isActive eq true }
+                .withDistinct()
+                .map { it[RecurringItems.household].value }
+        }
+
+    private fun getHouseholdOwnerId(householdId: UUID): UUID =
+        transaction(db) {
+            HouseholdMembership
+                .find {
+                    (HouseholdMemberships.household eq householdId) and
+                        (HouseholdMemberships.role eq MembershipRole.OWNER)
+                }.first()
+                .account.id.value
         }
 
     @Suppress("TooGenericExceptionCaught")
@@ -75,85 +94,74 @@ class RecurringScheduler(
         today: LocalDate,
     ) {
         try {
-            val activeItems = recurringItemService.findActiveByHousehold(householdId)
-            val dueItems = activeItems.filter { isDue(it, today) }
+            val itemData = transaction(db) {
+                RecurringItem.find {
+                    (RecurringItems.household eq householdId) and
+                        (RecurringItems.isActive eq true)
+                }.map { it.toData() }
+            }
+            val dueItems = itemData.filter { isDue(it, today) }
             if (dueItems.isEmpty()) return
 
-            val ownerId =
-                transaction(db) {
-                    dueItems
-                        .first()
-                        .createdBy.id.value
-                }
+            val ownerId = getHouseholdOwnerId(householdId)
             val listName = formatListName(today)
             val newList = shoppingListService.create(listName, ownerId, householdId, false)
-
-            createItemsForList(newList.id.value, dueItems, ownerId)
+            createListItems(newList.id.value, dueItems, ownerId)
             eventBroadcaster.broadcastListCreatedBySystem(newList, householdId)
             logger.info(
                 "Created recurring list '{}' for household {} with {} items",
-                listName,
-                householdId,
-                dueItems.size,
+                listName, householdId, dueItems.size,
             )
         } catch (e: Exception) {
             logger.error(
                 "Failed to process recurring items for household {}: {}",
-                householdId,
-                e.message,
+                householdId, e.message,
             )
         }
     }
 
-    private fun createItemsForList(
+    private fun createListItems(
         listId: UUID,
-        dueItems: List<RecurringItem>,
+        items: List<RecurringItemData>,
         ownerId: UUID,
     ) {
-        for (item in dueItems) {
-            val data =
-                transaction(db) {
-                    ItemCreationData(item.name, item.quantity, item.unit, item.id.value)
-                }
+        for (item in items) {
             listItemService.createFromRecurring(
-                listId,
-                data.name,
-                data.quantity,
-                data.unit,
-                ownerId,
-                data.recurringItemId,
+                listId, item.name, item.quantity, item.unit, ownerId, item.id,
             )
         }
     }
 
     private fun isDue(
-        item: RecurringItem,
+        item: RecurringItemData,
         today: LocalDate,
     ): Boolean {
-        val lastPurchased =
-            transaction(db) { item.lastPurchased }
-                ?: return true // Never purchased, always due
-
-        val frequency = transaction(db) { item.frequency }
-        val duration = config.getDuration(frequency)
+        val lastPurchased = item.lastPurchased ?: return true
+        val duration = config.getDuration(item.frequency)
         val daysSinceLastPurchase =
             java.time.temporal.ChronoUnit.DAYS
                 .between(lastPurchased, today)
-
         return daysSinceLastPurchase >= duration.inWholeDays
     }
 
-    private fun formatListName(date: LocalDate): String {
-        val formatter =
-            java.time.format.DateTimeFormatter
-                .ofPattern("d. MMM yyyy")
-        return "Handleliste ${date.format(formatter)}"
-    }
+    private fun formatListName(date: LocalDate): String = date.toString()
 
-    private data class ItemCreationData(
-        val name: String,
-        val quantity: Double,
-        val unit: String?,
-        val recurringItemId: UUID,
-    )
+    private fun RecurringItem.toData() =
+        RecurringItemData(
+            id = id.value,
+            name = name,
+            quantity = quantity,
+            unit = unit,
+            frequency = frequency,
+            lastPurchased = lastPurchased,
+        )
 }
+
+internal data class RecurringItemData(
+    val id: UUID,
+    val name: String,
+    val quantity: Double,
+    val unit: String?,
+    val frequency: RecurringFrequency,
+    val lastPurchased: LocalDate?,
+)
