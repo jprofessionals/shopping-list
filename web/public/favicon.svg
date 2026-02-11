@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- Green rounded background -->
+  <rect width="32" height="32" rx="6" ry="6" fill="#2E7D32"/>
+  <!-- Clipboard body -->
+  <rect x="8" y="7" width="16" height="20" rx="2" ry="2" fill="#FFFFFF"/>
+  <!-- Clipboard clip -->
+  <rect x="12" y="5" width="8" height="3" rx="1.5" ry="1.5" fill="#C8E6C9"/>
+  <!-- Checklist item 1 -->
+  <polyline points="10.5,13 12,14.5 14,12" fill="none" stroke="#2E7D32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="16" y1="13" x2="22" y2="13" stroke="#A5D6A7" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Checklist item 2 -->
+  <polyline points="10.5,18 12,19.5 14,17" fill="none" stroke="#2E7D32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="16" y1="18" x2="22" y2="18" stroke="#A5D6A7" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Checklist item 3 -->
+  <polyline points="10.5,23 12,24.5 14,22" fill="none" stroke="#2E7D32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="16" y1="23" x2="20" y2="23" stroke="#A5D6A7" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
