@@ -63,7 +63,8 @@ export default function SharedListView({ token }: SharedListViewProps) {
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/shared/${token}/items/${item.id}/check`, {
+      const url = `http://localhost:8080/api/shared/${token}/items/${item.id}/check`;
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
