@@ -155,7 +155,7 @@ jobs:
       - name: Run Ansible playbook
         env:
           VM_HOST: ${{ vars.VM_HOST }}
-        run: ansible-playbook infrastructure/ansible/deploy.yml --vault-password-file /tmp/vault_password
+        run: ansible-playbook -i infrastructure/ansible/inventory.yml infrastructure/ansible/deploy.yml --vault-password-file /tmp/vault_password
 
       - name: Cleanup secrets
         if: always()
