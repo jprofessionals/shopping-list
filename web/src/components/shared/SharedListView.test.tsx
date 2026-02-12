@@ -118,7 +118,10 @@ describe('SharedListView', () => {
     render(<SharedListView token="valid-token" />);
 
     await waitFor(() => {
-      expect(screen.getByText('Grocery List')).toBeInTheDocument();
+      expect(screen.getByTestId('shopping-list-view')).toHaveAttribute(
+        'data-shared-list-name',
+        'Grocery List'
+      );
     });
 
     expect(screen.getByText('Milk')).toBeInTheDocument();

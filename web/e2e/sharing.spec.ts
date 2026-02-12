@@ -89,7 +89,7 @@ test.describe('List Sharing', () => {
       data: {
         type: 'LINK',
         permission: 'READ',
-        expirationDays: 7,
+        expirationHours: 168,
       },
     });
     const share = await shareResponse.json();
@@ -118,7 +118,7 @@ test.describe('List Sharing', () => {
       data: {
         type: 'LINK',
         permission: 'READ',
-        expirationDays: -1, // Already expired
+        expirationHours: -1, // Already expired
       },
     });
     const share = await shareResponse.json();

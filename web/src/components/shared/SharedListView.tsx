@@ -93,8 +93,7 @@ export default function SharedListView({ token }: SharedListViewProps) {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">{listData.name}</h2>
+      <div className="mb-4 flex items-center justify-end">
         <Badge>{getPermissionLabel(listData.permission)}</Badge>
       </div>
       <ShoppingListView
