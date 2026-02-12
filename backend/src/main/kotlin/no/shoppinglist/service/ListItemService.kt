@@ -126,6 +126,15 @@ class ListItemService(
             item
         }
 
+    fun toggleCheckAnonymous(id: UUID): ListItem? =
+        transaction(db) {
+            val item = ListItem.findById(id) ?: return@transaction null
+            item.isChecked = !item.isChecked
+            item.checkedBy = null
+            item.updatedAt = Instant.now()
+            item
+        }
+
     fun delete(id: UUID): Boolean =
         transaction(db) {
             val deleted = ListItems.deleteWhere { ListItems.id eq id }

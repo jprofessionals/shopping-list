@@ -3,15 +3,19 @@ package no.shoppinglist.routes
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.get
+import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import kotlinx.serialization.Serializable
 import no.shoppinglist.domain.ListItem
 import no.shoppinglist.domain.ListShare
+import no.shoppinglist.domain.SharePermission
 import no.shoppinglist.domain.ShoppingList
 import no.shoppinglist.service.ListItemService
 import no.shoppinglist.service.ListShareService
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.util.UUID
 
 @Serializable
 data class SharedListResponse(
@@ -30,13 +34,50 @@ data class SharedItemResponse(
     val isChecked: Boolean,
 )
 
+data class ShareContext(
+    val listId: UUID,
+    val permission: SharePermission,
+)
+
 fun Route.sharedAccessRoutes(
     listShareService: ListShareService,
     listItemService: ListItemService,
 ) {
     route("/shared/{token}") {
         getSharedListRoute(listShareService, listItemService)
+        route("/items") {
+            route("/{itemId}") {
+                checkItemRoute(listShareService, listItemService)
+            }
+        }
     }
+}
+
+private suspend fun RoutingContext.validateShareToken(
+    listShareService: ListShareService,
+): ShareContext? {
+    val token = call.parameters["token"]
+    val share = token?.let { listShareService.findByToken(it) }
+
+    if (share == null) {
+        if (token != null) respondToMissingShare(listShareService, token)
+        return null
+    }
+    return transaction {
+        ShareContext(listId = share.list.id.value, permission = share.permission)
+    }
+}
+
+private suspend fun RoutingContext.respondToMissingShare(
+    listShareService: ListShareService,
+    token: String,
+): Nothing? {
+    if (listShareService.isTokenExpired(token)) {
+        call.respond(HttpStatusCode.Gone, mapOf("error" to "This link has expired"))
+    } else {
+        call.respond(HttpStatusCode.NotFound)
+    }
+    return null
 }
 
 private fun Route.getSharedListRoute(
@@ -62,6 +103,60 @@ private fun Route.getSharedListRoute(
         call.respond(HttpStatusCode.OK, buildSharedListResponse(list, share, items))
     }
 }
+
+private fun parseItemId(raw: String?): UUID? =
+    raw?.let {
+        try {
+            UUID.fromString(it)
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+    }
+
+private suspend fun RoutingContext.resolveSharedItem(
+    ctx: ShareContext,
+    listItemService: ListItemService,
+): UUID? {
+    val itemId = parseItemId(call.parameters["itemId"])
+        ?: return null.also { call.respond(HttpStatusCode.BadRequest) }
+
+    val item = listItemService.findById(itemId)
+    val belongsToList = item != null && transaction { item.list.id.value } == ctx.listId
+    if (!belongsToList) call.respond(HttpStatusCode.NotFound)
+    return itemId.takeIf { belongsToList }
+}
+
+private fun Route.checkItemRoute(
+    listShareService: ListShareService,
+    listItemService: ListItemService,
+) {
+    post("/check") {
+        val ctx = validateShareToken(listShareService) ?: return@post
+
+        if (ctx.permission != SharePermission.CHECK &&
+            ctx.permission != SharePermission.WRITE
+        ) {
+            return@post call.respond(HttpStatusCode.Forbidden)
+        }
+
+        val itemId = resolveSharedItem(ctx, listItemService) ?: return@post
+        val updated = listItemService.toggleCheckAnonymous(itemId)
+            ?: return@post call.respond(HttpStatusCode.NotFound)
+
+        call.respond(HttpStatusCode.OK, buildSharedItemResponse(updated))
+    }
+}
+
+private fun buildSharedItemResponse(item: ListItem) =
+    transaction {
+        SharedItemResponse(
+            id = item.id.value.toString(),
+            name = item.name,
+            quantity = item.quantity,
+            unit = item.unit,
+            isChecked = item.isChecked,
+        )
+    }
 
 private fun buildSharedListResponse(
     list: ShoppingList,

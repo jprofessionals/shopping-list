@@ -3,6 +3,10 @@ package no.shoppinglist.routes
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
@@ -307,6 +311,137 @@ class SharedAccessRoutesTest :
                     ?.get("isChecked")
                     ?.jsonPrimitive
                     ?.content shouldBe "true"
+            }
+        }
+
+        test("POST /shared/:token/items/:itemId/check toggles item for CHECK permission") {
+            testApplication {
+                application { testModule(this) }
+
+                val account =
+                    accountService.createLocal(
+                        email = "test@example.com",
+                        displayName = "Test User",
+                        password = "password123",
+                    )
+                val list =
+                    shoppingListService.create(
+                        name = "Check Test List",
+                        ownerId = account.id.value,
+                        householdId = null,
+                        isPersonal = false,
+                    )
+                val item =
+                    listItemService.create(
+                        listId = list.id.value,
+                        name = "Milk",
+                        quantity = 2.0,
+                        unit = "L",
+                        barcode = null,
+                        createdById = account.id.value,
+                    )
+                val share =
+                    listShareService.createLinkShare(
+                        listId = list.id.value,
+                        permission = SharePermission.CHECK,
+                        expirationDays = 7,
+                    )
+
+                val response =
+                    client.post("/shared/${share.linkToken}/items/${item.id.value}/check") {
+                        contentType(ContentType.Application.Json)
+                        setBody("{}")
+                    }
+
+                response.status shouldBe HttpStatusCode.OK
+                val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+                json["isChecked"]?.jsonPrimitive?.content shouldBe "true"
+            }
+        }
+
+        test("POST /shared/:token/items/:itemId/check returns 403 for READ permission") {
+            testApplication {
+                application { testModule(this) }
+
+                val account =
+                    accountService.createLocal(
+                        email = "test@example.com",
+                        displayName = "Test User",
+                        password = "password123",
+                    )
+                val list =
+                    shoppingListService.create(
+                        name = "Read Only List",
+                        ownerId = account.id.value,
+                        householdId = null,
+                        isPersonal = false,
+                    )
+                val item =
+                    listItemService.create(
+                        listId = list.id.value,
+                        name = "Bread",
+                        quantity = 1.0,
+                        unit = null,
+                        barcode = null,
+                        createdById = account.id.value,
+                    )
+                val share =
+                    listShareService.createLinkShare(
+                        listId = list.id.value,
+                        permission = SharePermission.READ,
+                        expirationDays = 7,
+                    )
+
+                val response =
+                    client.post("/shared/${share.linkToken}/items/${item.id.value}/check") {
+                        contentType(ContentType.Application.Json)
+                        setBody("{}")
+                    }
+
+                response.status shouldBe HttpStatusCode.Forbidden
+            }
+        }
+
+        test("POST /shared/:token/items/:itemId/check returns 410 for expired token") {
+            testApplication {
+                application { testModule(this) }
+
+                val account =
+                    accountService.createLocal(
+                        email = "test@example.com",
+                        displayName = "Test User",
+                        password = "password123",
+                    )
+                val list =
+                    shoppingListService.create(
+                        name = "Expired Check List",
+                        ownerId = account.id.value,
+                        householdId = null,
+                        isPersonal = false,
+                    )
+                val item =
+                    listItemService.create(
+                        listId = list.id.value,
+                        name = "Eggs",
+                        quantity = 12.0,
+                        unit = null,
+                        barcode = null,
+                        createdById = account.id.value,
+                    )
+                val share =
+                    listShareService.createLinkShare(
+                        listId = list.id.value,
+                        permission = SharePermission.CHECK,
+                        expirationDays = -1,
+                    )
+
+                val response =
+                    client.post("/shared/${share.linkToken}/items/${item.id.value}/check") {
+                        contentType(ContentType.Application.Json)
+                        setBody("{}")
+                    }
+
+                response.status shouldBe HttpStatusCode.Gone
             }
         }
     })
