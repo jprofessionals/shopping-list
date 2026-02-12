@@ -1,10 +1,13 @@
 package no.shoppinglist.routes
 
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.RoutingContext
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
+import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import kotlinx.serialization.Serializable
@@ -12,6 +15,10 @@ import no.shoppinglist.domain.ListItem
 import no.shoppinglist.domain.ListShare
 import no.shoppinglist.domain.SharePermission
 import no.shoppinglist.domain.ShoppingList
+import no.shoppinglist.routes.shoppinglist.CreateItemRequest
+import no.shoppinglist.routes.shoppinglist.ITEM_NAME_MAX_LENGTH
+import no.shoppinglist.routes.shoppinglist.ITEM_NAME_MIN_LENGTH
+import no.shoppinglist.routes.shoppinglist.UpdateItemRequest
 import no.shoppinglist.service.ListItemService
 import no.shoppinglist.service.ListShareService
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -46,8 +53,12 @@ fun Route.sharedAccessRoutes(
     route("/shared/{token}") {
         getSharedListRoute(listShareService, listItemService)
         route("/items") {
+            addItemRoute(listShareService, listItemService)
+            clearCheckedRoute(listShareService, listItemService)
             route("/{itemId}") {
                 checkItemRoute(listShareService, listItemService)
+                updateItemRoute(listShareService, listItemService)
+                deleteItemRoute(listShareService, listItemService)
             }
         }
     }
@@ -144,6 +155,99 @@ private fun Route.checkItemRoute(
             ?: return@post call.respond(HttpStatusCode.NotFound)
 
         call.respond(HttpStatusCode.OK, buildSharedItemResponse(updated))
+    }
+}
+
+private fun Route.addItemRoute(
+    listShareService: ListShareService,
+    listItemService: ListItemService,
+) {
+    post {
+        val ctx = validateShareToken(listShareService) ?: return@post
+        if (ctx.permission != SharePermission.WRITE) {
+            return@post call.respond(HttpStatusCode.Forbidden)
+        }
+
+        val request = call.receive<CreateItemRequest>()
+        if (request.name.length !in ITEM_NAME_MIN_LENGTH..ITEM_NAME_MAX_LENGTH) {
+            return@post call.respond(
+                HttpStatusCode.BadRequest,
+                mapOf(
+                    "error" to
+                        "Item name must be between $ITEM_NAME_MIN_LENGTH and $ITEM_NAME_MAX_LENGTH characters",
+                ),
+            )
+        }
+
+        val item = listItemService.createForSharedAccess(
+            ctx.listId,
+            request.name,
+            request.quantity,
+            request.unit,
+        )
+        call.respond(HttpStatusCode.Created, buildSharedItemResponse(item))
+    }
+}
+
+private fun Route.updateItemRoute(
+    listShareService: ListShareService,
+    listItemService: ListItemService,
+) {
+    patch {
+        val ctx = validateShareToken(listShareService) ?: return@patch
+        if (ctx.permission != SharePermission.WRITE) {
+            return@patch call.respond(HttpStatusCode.Forbidden)
+        }
+
+        val itemId = resolveSharedItem(ctx, listItemService) ?: return@patch
+
+        val request = call.receive<UpdateItemRequest>()
+        if (request.name.length !in ITEM_NAME_MIN_LENGTH..ITEM_NAME_MAX_LENGTH) {
+            return@patch call.respond(
+                HttpStatusCode.BadRequest,
+                mapOf(
+                    "error" to
+                        "Item name must be between $ITEM_NAME_MIN_LENGTH and $ITEM_NAME_MAX_LENGTH characters",
+                ),
+            )
+        }
+
+        val updated = listItemService.update(itemId, request.name, request.quantity, request.unit)
+            ?: return@patch call.respond(HttpStatusCode.NotFound)
+
+        call.respond(HttpStatusCode.OK, buildSharedItemResponse(updated))
+    }
+}
+
+private fun Route.deleteItemRoute(
+    listShareService: ListShareService,
+    listItemService: ListItemService,
+) {
+    delete {
+        val ctx = validateShareToken(listShareService) ?: return@delete
+        if (ctx.permission != SharePermission.WRITE) {
+            return@delete call.respond(HttpStatusCode.Forbidden)
+        }
+
+        val itemId = resolveSharedItem(ctx, listItemService) ?: return@delete
+
+        listItemService.delete(itemId)
+        call.respond(HttpStatusCode.NoContent)
+    }
+}
+
+private fun Route.clearCheckedRoute(
+    listShareService: ListShareService,
+    listItemService: ListItemService,
+) {
+    delete("/checked") {
+        val ctx = validateShareToken(listShareService) ?: return@delete
+        if (ctx.permission != SharePermission.WRITE) {
+            return@delete call.respond(HttpStatusCode.Forbidden)
+        }
+
+        val deletedIds = listItemService.deleteCheckedItems(ctx.listId)
+        call.respond(mapOf("deletedItemIds" to deletedIds.map { it.toString() }))
     }
 }
 

@@ -82,6 +82,32 @@ class ListItemService(
             }
         }
 
+    fun createForSharedAccess(
+        listId: UUID,
+        name: String,
+        quantity: Double,
+        unit: String?,
+    ): ListItem =
+        transaction(db) {
+            val list =
+                ShoppingList.findById(listId)
+                    ?: throw IllegalArgumentException("List not found: $listId")
+            val now = Instant.now()
+
+            ListItem.new {
+                this.list = list
+                this.name = name
+                this.quantity = quantity
+                this.unit = unit
+                this.barcode = null
+                this.isChecked = false
+                this.checkedBy = null
+                this.createdBy = list.owner
+                this.createdAt = now
+                this.updatedAt = now
+            }
+        }
+
     fun findByListId(listId: UUID): List<ListItem> =
         transaction(db) {
             ListItem.find { ListItems.list eq listId }.toList()
