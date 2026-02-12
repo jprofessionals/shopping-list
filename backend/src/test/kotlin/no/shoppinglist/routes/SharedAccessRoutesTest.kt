@@ -155,7 +155,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.READ,
-                        expirationDays = 7,
+                        expirationHours = 168,
                     )
 
                 // Get shared list via token
@@ -201,7 +201,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.READ,
-                        expirationDays = -1,
+                        expirationHours = -1,
                     )
 
                 // Try to access expired link
@@ -249,7 +249,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.WRITE,
-                        expirationDays = 7,
+                        expirationHours = 168,
                     )
 
                 // Get shared list via token
@@ -297,7 +297,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.READ,
-                        expirationDays = 7,
+                        expirationHours = 168,
                     )
 
                 // Get shared list via token
@@ -346,7 +346,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.CHECK,
-                        expirationDays = 7,
+                        expirationHours = 168,
                     )
 
                 val response =
@@ -391,7 +391,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.READ,
-                        expirationDays = 7,
+                        expirationHours = 168,
                     )
 
                 val response =
@@ -434,7 +434,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.CHECK,
-                        expirationDays = -1,
+                        expirationHours = -1,
                     )
 
                 val response =
@@ -468,7 +468,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.WRITE,
-                        expirationDays = 7,
+                        expirationHours = 168,
                     )
 
                 val response =
@@ -507,7 +507,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.CHECK,
-                        expirationDays = 7,
+                        expirationHours = 168,
                     )
 
                 val response =
@@ -550,7 +550,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.WRITE,
-                        expirationDays = 7,
+                        expirationHours = 168,
                     )
 
                 val response =
@@ -597,7 +597,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.WRITE,
-                        expirationDays = 7,
+                        expirationHours = 168,
                     )
 
                 val response =
@@ -649,7 +649,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.WRITE,
-                        expirationDays = 7,
+                        expirationHours = 168,
                     )
 
                 val response =

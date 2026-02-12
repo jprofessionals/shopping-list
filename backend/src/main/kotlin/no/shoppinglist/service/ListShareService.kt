@@ -49,7 +49,7 @@ class ListShareService(
     fun createLinkShare(
         listId: UUID,
         permission: SharePermission,
-        expirationDays: Int,
+        expirationHours: Int,
     ): ListShare =
         transaction(db) {
             val list =
@@ -62,7 +62,7 @@ class ListShareService(
                 this.account = null
                 this.linkToken = generateToken()
                 this.permission = permission
-                this.expiresAt = Instant.now().plus(expirationDays.toLong(), ChronoUnit.DAYS)
+                this.expiresAt = Instant.now().plus(expirationHours.toLong(), ChronoUnit.HOURS)
                 this.createdAt = Instant.now()
             }
         }
