@@ -126,10 +126,10 @@ private suspend fun io.ktor.server.routing.RoutingContext.createShare(
             listShareService.createUserShare(listId, targetAccountId, permission)
         }
         ShareType.LINK -> {
-            if (request.expirationHours < 1 || request.expirationHours > 168) {
+            if (request.expirationHours > 168) {
                 call.respond(
                     HttpStatusCode.BadRequest,
-                    mapOf("error" to "Expiration must be between 1 and 168 hours (7 days)"),
+                    mapOf("error" to "Expiration must not exceed 168 hours (7 days)"),
                 )
                 return null
             }
