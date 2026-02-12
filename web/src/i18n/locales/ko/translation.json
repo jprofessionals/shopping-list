@@ -190,7 +190,7 @@
     "readOnly": "읽기 전용",
     "canCheckItems": "항목 체크 가능",
     "canEdit": "편집 가능",
-    "expiresInDays": "만료 기간 (일)",
+    "expiresIn": "만료 기간",
     "createLink": "링크 만들기",
     "creatingLink": "만드는 중...",
     "shareLink": "공유 링크",

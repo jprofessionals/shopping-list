@@ -7,6 +7,14 @@ import LinkDisplay from './LinkDisplay';
 
 type Permission = 'READ' | 'CHECK' | 'WRITE';
 
+const EXPIRY_PRESETS = [
+  { label: '1h', hours: 1 },
+  { label: '6h', hours: 6 },
+  { label: '24h', hours: 24 },
+  { label: '3d', hours: 72 },
+  { label: '7d', hours: 168 },
+];
+
 interface LinkShareTabProps {
   listId: string;
   onClose: () => void;
@@ -15,7 +23,7 @@ interface LinkShareTabProps {
 export default function LinkShareTab({ listId, onClose }: LinkShareTabProps) {
   const { t } = useTranslation();
   const [permission, setPermission] = useState<Permission>('READ');
-  const [expirationDays, setExpirationDays] = useState(7);
+  const [expirationHours, setExpirationHours] = useState(24);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +43,7 @@ export default function LinkShareTab({ listId, onClose }: LinkShareTabProps) {
         body: JSON.stringify({
           type: 'LINK',
           permission,
-          expirationDays,
+          expirationHours,
         }),
       });
 
@@ -86,21 +94,25 @@ export default function LinkShareTab({ listId, onClose }: LinkShareTabProps) {
           </select>
         </div>
         <div>
-          <label
-            htmlFor="expirationDays"
-            className="block text-sm font-medium leading-6 text-gray-900"
-          >
-            {t('linkShare.expiresInDays')}
+          <label className="block text-sm font-medium leading-6 text-gray-900">
+            {t('linkShare.expiresIn')}
           </label>
-          <input
-            type="number"
-            id="expirationDays"
-            value={expirationDays}
-            onChange={(e) => setExpirationDays(parseInt(e.target.value) || 1)}
-            min={1}
-            max={365}
-            className="mt-2 block w-full rounded-md border-0 px-3 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-          />
+          <div className="mt-2 flex gap-2">
+            {EXPIRY_PRESETS.map((preset) => (
+              <button
+                key={preset.hours}
+                type="button"
+                onClick={() => setExpirationHours(preset.hours)}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  expirationHours === preset.hours
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       <ModalActions>

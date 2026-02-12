@@ -45,7 +45,7 @@ describe('ShareListModal', () => {
     expect(screen.getByRole('button', { name: /share link/i })).toBeInTheDocument();
   });
 
-  it('shows expiration field for link share', () => {
+  it('shows expiry preset buttons for link share', () => {
     render(
       <Provider store={createTestStore()}>
         <ShareListModal listId="list-1" onClose={() => {}} />
@@ -55,8 +55,11 @@ describe('ShareListModal', () => {
     // Click link tab
     fireEvent.click(screen.getByRole('button', { name: /share link/i }));
 
-    // Expect "Expires in" label
-    expect(screen.getByLabelText(/expires in/i)).toBeInTheDocument();
+    // Expect "Expires in" label text and preset buttons
+    expect(screen.getByText(/expires in/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1h' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '24h' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '7d' })).toBeInTheDocument();
   });
 
   it('shows email input for user share tab by default', () => {
@@ -112,7 +115,7 @@ describe('ShareListModal', () => {
     expect(screen.getByRole('button', { name: /^share$/i })).toBeInTheDocument();
   });
 
-  it('has default expiration of 7 days', () => {
+  it('has default expiration of 24h selected', () => {
     render(
       <Provider store={createTestStore()}>
         <ShareListModal listId="list-1" onClose={() => {}} />
@@ -120,7 +123,7 @@ describe('ShareListModal', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /share link/i }));
-    const expirationInput = screen.getByLabelText(/expires in/i) as HTMLInputElement;
-    expect(expirationInput.value).toBe('7');
+    const selectedButton = screen.getByRole('button', { name: '24h' });
+    expect(selectedButton.className).toContain('bg-indigo-600');
   });
 });
