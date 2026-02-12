@@ -19,7 +19,7 @@ data class CreateShareRequest(
     val type: String,
     val accountId: String? = null,
     val permission: String,
-    val expirationDays: Int = 7,
+    val expirationHours: Int = 24,
 )
 
 @Serializable

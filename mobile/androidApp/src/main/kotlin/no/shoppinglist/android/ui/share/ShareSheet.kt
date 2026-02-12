@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
@@ -57,7 +57,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -205,8 +204,8 @@ fun ShareSheet(
             // Create link section
             item {
                 CreateLinkSection(
-                    onCreate = { permission, days ->
-                        shareViewModel.createLinkShare(listId, permission, days)
+                    onCreate = { permission, hours ->
+                        shareViewModel.createLinkShare(listId, permission, hours)
                     },
                 )
             }
@@ -381,13 +380,23 @@ private fun ShareWithUserSection(
     }
 }
 
+private data class ExpiryPreset(val label: String, val hours: Int)
+
+private val expiryPresets = listOf(
+    ExpiryPreset("1h", 1),
+    ExpiryPreset("6h", 6),
+    ExpiryPreset("24h", 24),
+    ExpiryPreset("3d", 72),
+    ExpiryPreset("7d", 168),
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CreateLinkSection(
-    onCreate: (permission: String, expirationDays: Int) -> Unit,
+    onCreate: (permission: String, expirationHours: Int) -> Unit,
 ) {
     var selectedPermission by rememberSaveable { mutableStateOf("READ") }
-    var expirationDays by rememberSaveable { mutableIntStateOf(7) }
+    var selectedHours by rememberSaveable { mutableIntStateOf(24) }
     var permissionExpanded by remember { mutableStateOf(false) }
 
     Column {
@@ -398,56 +407,77 @@ private fun CreateLinkSection(
             modifier = Modifier.padding(bottom = 8.dp),
         )
 
+        ExposedDropdownMenuBox(
+            expanded = permissionExpanded,
+            onExpandedChange = { permissionExpanded = it },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            OutlinedTextField(
+                value = selectedPermission,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(t("linkShare.permission")) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = permissionExpanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+            )
+            ExposedDropdownMenu(
+                expanded = permissionExpanded,
+                onDismissRequest = { permissionExpanded = false },
+            ) {
+                permissions.forEach { perm ->
+                    DropdownMenuItem(
+                        text = { Text(perm) },
+                        onClick = {
+                            selectedPermission = perm
+                            permissionExpanded = false
+                        },
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = t("linkShare.expiresIn"),
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(bottom = 4.dp),
+        )
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
         ) {
-            ExposedDropdownMenuBox(
-                expanded = permissionExpanded,
-                onExpandedChange = { permissionExpanded = it },
-                modifier = Modifier.weight(1f),
-            ) {
-                OutlinedTextField(
-                    value = selectedPermission,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text(t("linkShare.permission")) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = permissionExpanded) },
-                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                )
-                ExposedDropdownMenu(
-                    expanded = permissionExpanded,
-                    onDismissRequest = { permissionExpanded = false },
-                ) {
-                    permissions.forEach { perm ->
-                        DropdownMenuItem(
-                            text = { Text(perm) },
-                            onClick = {
-                                selectedPermission = perm
-                                permissionExpanded = false
-                            },
+            expiryPresets.forEach { preset ->
+                val isSelected = selectedHours == preset.hours
+                Button(
+                    onClick = { selectedHours = preset.hours },
+                    colors = if (isSelected) {
+                        ButtonDefaults.buttonColors()
+                    } else {
+                        ButtonDefaults.outlinedButtonColors()
+                    },
+                    border = if (!isSelected) {
+                        androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.outline,
                         )
-                    }
+                    } else {
+                        null
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(preset.label)
                 }
             }
-
-            OutlinedTextField(
-                value = expirationDays.toString(),
-                onValueChange = { text ->
-                    text.toIntOrNull()?.let { if (it in 1..365) expirationDays = it }
-                },
-                label = { Text(t("shareList.days")) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.width(80.dp),
-            )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(
-            onClick = { onCreate(selectedPermission, expirationDays) },
+            onClick = { onCreate(selectedPermission, selectedHours) },
             modifier = Modifier.fillMaxWidth(),
         ) {
             Icon(Icons.Default.Link, contentDescription = null)
