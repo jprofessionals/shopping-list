@@ -2,6 +2,35 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import SharedListView from './SharedListView';
 
+interface MockItem {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string | null;
+}
+
+// Mock ShoppingListView to avoid Redux/router dependencies
+vi.mock('../shopping-list/ShoppingListView', () => ({
+  default: (props: Record<string, unknown>) => (
+    <div
+      data-testid="shopping-list-view"
+      data-permission={props.permission}
+      data-share-token={props.shareToken}
+      data-list-id={props.listId}
+      data-shared-list-name={props.sharedListName}
+    >
+      {(props.sharedItems as MockItem[])?.map((item) => (
+        <div key={item.id} data-testid={`item-${item.id}`}>
+          <span>{item.name}</span>
+          <span>
+            {item.quantity} {item.unit}
+          </span>
+        </div>
+      ))}
+    </div>
+  ),
+}));
+
 const mockFetch = vi.fn();
 
 describe('SharedListView', () => {
@@ -47,6 +76,29 @@ describe('SharedListView', () => {
     });
   });
 
+  it('shows error message for other error responses', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+    });
+
+    render(<SharedListView token="error-token" />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/an error occurred/i)).toBeInTheDocument();
+    });
+  });
+
+  it('shows error message on network failure', async () => {
+    mockFetch.mockRejectedValue(new Error('Network error'));
+
+    render(<SharedListView token="error-token" />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/an error occurred/i)).toBeInTheDocument();
+    });
+  });
+
   it('shows list name and items on successful fetch', async () => {
     const mockList = {
       id: 'list-1',
@@ -73,11 +125,11 @@ describe('SharedListView', () => {
     expect(screen.getByText('Bread')).toBeInTheDocument();
   });
 
-  it('shows permission level', async () => {
+  it('shows permission level badge', async () => {
     const mockList = {
       id: 'list-1',
       name: 'Test List',
-      permission: 'VIEW',
+      permission: 'READ',
       items: [],
     };
 
@@ -93,7 +145,7 @@ describe('SharedListView', () => {
     });
   });
 
-  it('renders checkboxes for items when permission is CHECK', async () => {
+  it('renders ShoppingListView with correct props on success', async () => {
     const mockList = {
       id: 'list-1',
       name: 'Test List',
@@ -109,17 +161,25 @@ describe('SharedListView', () => {
     render(<SharedListView token="valid-token" />);
 
     await waitFor(() => {
-      expect(screen.getByRole('checkbox')).toBeInTheDocument();
+      expect(screen.getByTestId('shopping-list-view')).toBeInTheDocument();
     });
-    expect(screen.getByRole('checkbox')).not.toBeDisabled();
+
+    const listView = screen.getByTestId('shopping-list-view');
+    expect(listView).toHaveAttribute('data-permission', 'CHECK');
+    expect(listView).toHaveAttribute('data-share-token', 'valid-token');
+    expect(listView).toHaveAttribute('data-list-id', 'list-1');
+    expect(listView).toHaveAttribute('data-shared-list-name', 'Test List');
   });
 
-  it('renders checkboxes for items when permission is WRITE', async () => {
+  it('passes items to ShoppingListView', async () => {
     const mockList = {
       id: 'list-1',
       name: 'Test List',
       permission: 'WRITE',
-      items: [{ id: 'item-1', name: 'Milk', quantity: 1, unit: null, isChecked: false }],
+      items: [
+        { id: 'item-1', name: 'Milk', quantity: 1, unit: null, isChecked: false },
+        { id: 'item-2', name: 'Bread', quantity: 2, unit: 'loaves', isChecked: false },
+      ],
     };
 
     mockFetch.mockResolvedValue({
@@ -130,37 +190,16 @@ describe('SharedListView', () => {
     render(<SharedListView token="valid-token" />);
 
     await waitFor(() => {
-      expect(screen.getByRole('checkbox')).toBeInTheDocument();
+      expect(screen.getByTestId('item-item-1')).toBeInTheDocument();
     });
-    expect(screen.getByRole('checkbox')).not.toBeDisabled();
-  });
-
-  it('disables checkboxes when permission is VIEW', async () => {
-    const mockList = {
-      id: 'list-1',
-      name: 'Test List',
-      permission: 'VIEW',
-      items: [{ id: 'item-1', name: 'Milk', quantity: 1, unit: null, isChecked: false }],
-    };
-
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(mockList),
-    });
-
-    render(<SharedListView token="valid-token" />);
-
-    await waitFor(() => {
-      expect(screen.getByRole('checkbox')).toBeInTheDocument();
-    });
-    expect(screen.getByRole('checkbox')).toBeDisabled();
+    expect(screen.getByTestId('item-item-2')).toBeInTheDocument();
   });
 
   it('displays quantity and unit for items', async () => {
     const mockList = {
       id: 'list-1',
       name: 'Test List',
-      permission: 'VIEW',
+      permission: 'READ',
       items: [{ id: 'item-1', name: 'Milk', quantity: 2, unit: 'liters', isChecked: false }],
     };
 
