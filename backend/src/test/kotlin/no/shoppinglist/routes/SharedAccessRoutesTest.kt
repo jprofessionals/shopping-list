@@ -2,7 +2,13 @@ package no.shoppinglist.routes
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.patch
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
@@ -149,7 +155,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.READ,
-                        expirationDays = 7,
+                        expirationHours = 168,
                     )
 
                 // Get shared list via token
@@ -195,7 +201,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.READ,
-                        expirationDays = -1,
+                        expirationHours = -1,
                     )
 
                 // Try to access expired link
@@ -243,7 +249,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.WRITE,
-                        expirationDays = 7,
+                        expirationHours = 168,
                     )
 
                 // Get shared list via token
@@ -291,7 +297,7 @@ class SharedAccessRoutesTest :
                     listShareService.createLinkShare(
                         listId = list.id.value,
                         permission = SharePermission.READ,
-                        expirationDays = 7,
+                        expirationHours = 168,
                     )
 
                 // Get shared list via token
@@ -307,6 +313,353 @@ class SharedAccessRoutesTest :
                     ?.get("isChecked")
                     ?.jsonPrimitive
                     ?.content shouldBe "true"
+            }
+        }
+
+        test("POST /shared/:token/items/:itemId/check toggles item for CHECK permission") {
+            testApplication {
+                application { testModule(this) }
+
+                val account =
+                    accountService.createLocal(
+                        email = "test@example.com",
+                        displayName = "Test User",
+                        password = "password123",
+                    )
+                val list =
+                    shoppingListService.create(
+                        name = "Check Test List",
+                        ownerId = account.id.value,
+                        householdId = null,
+                        isPersonal = false,
+                    )
+                val item =
+                    listItemService.create(
+                        listId = list.id.value,
+                        name = "Milk",
+                        quantity = 2.0,
+                        unit = "L",
+                        barcode = null,
+                        createdById = account.id.value,
+                    )
+                val share =
+                    listShareService.createLinkShare(
+                        listId = list.id.value,
+                        permission = SharePermission.CHECK,
+                        expirationHours = 168,
+                    )
+
+                val response =
+                    client.post("/shared/${share.linkToken}/items/${item.id.value}/check") {
+                        contentType(ContentType.Application.Json)
+                        setBody("{}")
+                    }
+
+                response.status shouldBe HttpStatusCode.OK
+                val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+                json["isChecked"]?.jsonPrimitive?.content shouldBe "true"
+            }
+        }
+
+        test("POST /shared/:token/items/:itemId/check returns 403 for READ permission") {
+            testApplication {
+                application { testModule(this) }
+
+                val account =
+                    accountService.createLocal(
+                        email = "test@example.com",
+                        displayName = "Test User",
+                        password = "password123",
+                    )
+                val list =
+                    shoppingListService.create(
+                        name = "Read Only List",
+                        ownerId = account.id.value,
+                        householdId = null,
+                        isPersonal = false,
+                    )
+                val item =
+                    listItemService.create(
+                        listId = list.id.value,
+                        name = "Bread",
+                        quantity = 1.0,
+                        unit = null,
+                        barcode = null,
+                        createdById = account.id.value,
+                    )
+                val share =
+                    listShareService.createLinkShare(
+                        listId = list.id.value,
+                        permission = SharePermission.READ,
+                        expirationHours = 168,
+                    )
+
+                val response =
+                    client.post("/shared/${share.linkToken}/items/${item.id.value}/check") {
+                        contentType(ContentType.Application.Json)
+                        setBody("{}")
+                    }
+
+                response.status shouldBe HttpStatusCode.Forbidden
+            }
+        }
+
+        test("POST /shared/:token/items/:itemId/check returns 410 for expired token") {
+            testApplication {
+                application { testModule(this) }
+
+                val account =
+                    accountService.createLocal(
+                        email = "test@example.com",
+                        displayName = "Test User",
+                        password = "password123",
+                    )
+                val list =
+                    shoppingListService.create(
+                        name = "Expired Check List",
+                        ownerId = account.id.value,
+                        householdId = null,
+                        isPersonal = false,
+                    )
+                val item =
+                    listItemService.create(
+                        listId = list.id.value,
+                        name = "Eggs",
+                        quantity = 12.0,
+                        unit = null,
+                        barcode = null,
+                        createdById = account.id.value,
+                    )
+                val share =
+                    listShareService.createLinkShare(
+                        listId = list.id.value,
+                        permission = SharePermission.CHECK,
+                        expirationHours = -1,
+                    )
+
+                val response =
+                    client.post("/shared/${share.linkToken}/items/${item.id.value}/check") {
+                        contentType(ContentType.Application.Json)
+                        setBody("{}")
+                    }
+
+                response.status shouldBe HttpStatusCode.Gone
+            }
+        }
+
+        test("POST /shared/:token/items adds item for WRITE permission") {
+            testApplication {
+                application { testModule(this) }
+
+                val account =
+                    accountService.createLocal(
+                        email = "test@example.com",
+                        displayName = "Test User",
+                        password = "password123",
+                    )
+                val list =
+                    shoppingListService.create(
+                        name = "Write Test List",
+                        ownerId = account.id.value,
+                        householdId = null,
+                        isPersonal = false,
+                    )
+                val share =
+                    listShareService.createLinkShare(
+                        listId = list.id.value,
+                        permission = SharePermission.WRITE,
+                        expirationHours = 168,
+                    )
+
+                val response =
+                    client.post("/shared/${share.linkToken}/items") {
+                        contentType(ContentType.Application.Json)
+                        setBody("""{"name":"Apples","quantity":3.0,"unit":"kg"}""")
+                    }
+
+                response.status shouldBe HttpStatusCode.Created
+                val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+                json["name"]?.jsonPrimitive?.content shouldBe "Apples"
+                json["quantity"]?.jsonPrimitive?.content shouldBe "3.0"
+                json["unit"]?.jsonPrimitive?.content shouldBe "kg"
+                json["isChecked"]?.jsonPrimitive?.content shouldBe "false"
+            }
+        }
+
+        test("POST /shared/:token/items returns 403 for CHECK permission") {
+            testApplication {
+                application { testModule(this) }
+
+                val account =
+                    accountService.createLocal(
+                        email = "test@example.com",
+                        displayName = "Test User",
+                        password = "password123",
+                    )
+                val list =
+                    shoppingListService.create(
+                        name = "Check Only List",
+                        ownerId = account.id.value,
+                        householdId = null,
+                        isPersonal = false,
+                    )
+                val share =
+                    listShareService.createLinkShare(
+                        listId = list.id.value,
+                        permission = SharePermission.CHECK,
+                        expirationHours = 168,
+                    )
+
+                val response =
+                    client.post("/shared/${share.linkToken}/items") {
+                        contentType(ContentType.Application.Json)
+                        setBody("""{"name":"Bananas","quantity":1.0}""")
+                    }
+
+                response.status shouldBe HttpStatusCode.Forbidden
+            }
+        }
+
+        test("PATCH /shared/:token/items/:itemId updates item for WRITE permission") {
+            testApplication {
+                application { testModule(this) }
+
+                val account =
+                    accountService.createLocal(
+                        email = "test@example.com",
+                        displayName = "Test User",
+                        password = "password123",
+                    )
+                val list =
+                    shoppingListService.create(
+                        name = "Update Test List",
+                        ownerId = account.id.value,
+                        householdId = null,
+                        isPersonal = false,
+                    )
+                val item =
+                    listItemService.create(
+                        listId = list.id.value,
+                        name = "Milk",
+                        quantity = 1.0,
+                        unit = "L",
+                        barcode = null,
+                        createdById = account.id.value,
+                    )
+                val share =
+                    listShareService.createLinkShare(
+                        listId = list.id.value,
+                        permission = SharePermission.WRITE,
+                        expirationHours = 168,
+                    )
+
+                val response =
+                    client.patch("/shared/${share.linkToken}/items/${item.id.value}") {
+                        contentType(ContentType.Application.Json)
+                        setBody("""{"name":"Oat Milk","quantity":2.0,"unit":"L"}""")
+                    }
+
+                response.status shouldBe HttpStatusCode.OK
+                val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+                json["name"]?.jsonPrimitive?.content shouldBe "Oat Milk"
+                json["quantity"]?.jsonPrimitive?.content shouldBe "2.0"
+                json["unit"]?.jsonPrimitive?.content shouldBe "L"
+            }
+        }
+
+        test("DELETE /shared/:token/items/:itemId deletes item for WRITE permission") {
+            testApplication {
+                application { testModule(this) }
+
+                val account =
+                    accountService.createLocal(
+                        email = "test@example.com",
+                        displayName = "Test User",
+                        password = "password123",
+                    )
+                val list =
+                    shoppingListService.create(
+                        name = "Delete Test List",
+                        ownerId = account.id.value,
+                        householdId = null,
+                        isPersonal = false,
+                    )
+                val item =
+                    listItemService.create(
+                        listId = list.id.value,
+                        name = "Bread",
+                        quantity = 1.0,
+                        unit = null,
+                        barcode = null,
+                        createdById = account.id.value,
+                    )
+                val share =
+                    listShareService.createLinkShare(
+                        listId = list.id.value,
+                        permission = SharePermission.WRITE,
+                        expirationHours = 168,
+                    )
+
+                val response =
+                    client.delete("/shared/${share.linkToken}/items/${item.id.value}")
+
+                response.status shouldBe HttpStatusCode.NoContent
+            }
+        }
+
+        test("DELETE /shared/:token/items/checked clears checked items for WRITE permission") {
+            testApplication {
+                application { testModule(this) }
+
+                val account =
+                    accountService.createLocal(
+                        email = "test@example.com",
+                        displayName = "Test User",
+                        password = "password123",
+                    )
+                val list =
+                    shoppingListService.create(
+                        name = "Clear Checked List",
+                        ownerId = account.id.value,
+                        householdId = null,
+                        isPersonal = false,
+                    )
+                val item1 =
+                    listItemService.create(
+                        listId = list.id.value,
+                        name = "Checked Item",
+                        quantity = 1.0,
+                        unit = null,
+                        barcode = null,
+                        createdById = account.id.value,
+                    )
+                val item2 =
+                    listItemService.create(
+                        listId = list.id.value,
+                        name = "Unchecked Item",
+                        quantity = 1.0,
+                        unit = null,
+                        barcode = null,
+                        createdById = account.id.value,
+                    )
+                // Check item1
+                listItemService.toggleCheck(item1.id.value, account.id.value)
+
+                val share =
+                    listShareService.createLinkShare(
+                        listId = list.id.value,
+                        permission = SharePermission.WRITE,
+                        expirationHours = 168,
+                    )
+
+                val response =
+                    client.delete("/shared/${share.linkToken}/items/checked")
+
+                response.status shouldBe HttpStatusCode.OK
+                val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+                val deletedIds = json["deletedItemIds"]?.jsonArray
+                deletedIds?.size shouldBe 1
+                deletedIds?.get(0)?.jsonPrimitive?.content shouldBe item1.id.value.toString()
             }
         }
     })

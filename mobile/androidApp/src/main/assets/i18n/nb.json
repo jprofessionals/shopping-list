@@ -146,7 +146,7 @@
     "readOnly": "Kun lesing",
     "canCheckItems": "Kan krysse av varer",
     "canEdit": "Kan redigere",
-    "expiresInDays": "Utløper om (dager)",
+    "expiresIn": "Utløper om",
     "createLink": "Opprett lenke",
     "creatingLink": "Oppretter...",
     "shareLink": "Delingslenke",

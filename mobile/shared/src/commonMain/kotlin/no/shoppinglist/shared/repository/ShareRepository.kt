@@ -16,7 +16,7 @@ class ShareRepository(
         type: String,
         permission: String,
         accountId: String? = null,
-        expirationDays: Int = 7,
+        expirationHours: Int = 24,
     ): ShareResponse =
         shareApi.createShare(
             listId = listId,
@@ -24,7 +24,7 @@ class ShareRepository(
                 type = type,
                 accountId = accountId,
                 permission = permission,
-                expirationDays = expirationDays,
+                expirationHours = expirationHours,
             ),
         )
 

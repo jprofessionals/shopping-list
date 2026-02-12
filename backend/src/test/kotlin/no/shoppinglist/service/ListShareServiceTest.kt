@@ -93,7 +93,7 @@ class ListShareServiceTest :
         }
 
         test("createLinkShare creates share with token and expiration") {
-            val share = service.createLinkShare(testListId, SharePermission.CHECK, 7)
+            val share = service.createLinkShare(testListId, SharePermission.CHECK, 168)
 
             share shouldNotBe null
             transaction(db) {
@@ -107,7 +107,7 @@ class ListShareServiceTest :
 
         test("findByListId returns all shares") {
             service.createUserShare(testListId, otherAccountId, SharePermission.READ)
-            service.createLinkShare(testListId, SharePermission.WRITE, 7)
+            service.createLinkShare(testListId, SharePermission.WRITE, 168)
 
             val shares = service.findByListId(testListId)
 
@@ -124,7 +124,7 @@ class ListShareServiceTest :
         }
 
         test("findByToken returns valid link share") {
-            val share = service.createLinkShare(testListId, SharePermission.READ, 7)
+            val share = service.createLinkShare(testListId, SharePermission.READ, 168)
             val token = transaction(db) { share.linkToken!! }
 
             val found = service.findByToken(token)

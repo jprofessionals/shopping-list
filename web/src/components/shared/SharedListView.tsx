@@ -1,25 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LoadingSpinner, ErrorAlert, EmptyState, Badge } from '../common';
+import { LoadingSpinner, ErrorAlert, Badge } from '../common';
 import { API_BASE } from '../../services/api';
+import ShoppingListView from '../shopping-list/ShoppingListView';
+import type { SharePermission } from '../shopping-list/ShoppingListView';
+import { type ListItem } from '../../store/listsSlice';
 
 interface SharedListViewProps {
   token: string;
 }
 
-interface SharedItem {
+interface SharedListData {
   id: string;
   name: string;
-  quantity: number;
-  unit: string | null;
-  isChecked: boolean;
-}
-
-interface SharedList {
-  id: string;
-  name: string;
-  permission: string;
-  items: SharedItem[];
+  permission: SharePermission;
 }
 
 type ViewState = 'loading' | 'expired' | 'not_found' | 'success' | 'error';
@@ -27,13 +21,13 @@ type ViewState = 'loading' | 'expired' | 'not_found' | 'success' | 'error';
 export default function SharedListView({ token }: SharedListViewProps) {
   const { t } = useTranslation();
   const [viewState, setViewState] = useState<ViewState>('loading');
-  const [list, setList] = useState<SharedList | null>(null);
+  const [listData, setListData] = useState<SharedListData | null>(null);
+  const [items, setItems] = useState<ListItem[]>([]);
 
   useEffect(() => {
     const fetchList = async () => {
       try {
         const response = await fetch(`${API_BASE}/shared/${token}`);
-
         if (!response.ok) {
           if (response.status === 410) {
             setViewState('expired');
@@ -46,51 +40,20 @@ export default function SharedListView({ token }: SharedListViewProps) {
           setViewState('error');
           return;
         }
-
-        const data: SharedList = await response.json();
-        setList(data);
+        const data = await response.json();
+        setListData({ id: data.id, name: data.name, permission: data.permission });
+        setItems(data.items);
         setViewState('success');
       } catch {
         setViewState('error');
       }
     };
-
     fetchList();
   }, [token]);
 
-  const handleToggleCheck = async (item: SharedItem) => {
-    if (!list || (list.permission !== 'CHECK' && list.permission !== 'WRITE')) {
-      return;
-    }
-
-    try {
-      const url = `${API_BASE}/shared/${token}/items/${item.id}/check`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ isChecked: !item.isChecked }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setList((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            items: prev.items.map((i) =>
-              i.id === item.id ? { ...i, isChecked: data.isChecked } : i
-            ),
-          };
-        });
-      }
-    } catch {
-      console.error('Failed to toggle item check');
-    }
-  };
-
-  const canCheck = list?.permission === 'CHECK' || list?.permission === 'WRITE';
+  const handleItemsChange = useCallback((newItems: ListItem[]) => {
+    setItems(newItems);
+  }, []);
 
   if (viewState === 'loading') {
     return (
@@ -99,7 +62,6 @@ export default function SharedListView({ token }: SharedListViewProps) {
       </div>
     );
   }
-
   if (viewState === 'expired') {
     return (
       <ErrorAlert
@@ -109,21 +71,16 @@ export default function SharedListView({ token }: SharedListViewProps) {
       />
     );
   }
-
   if (viewState === 'not_found') {
     return <ErrorAlert title={t('shared.notFoundTitle')} message={t('shared.notFoundMessage')} />;
   }
-
-  if (viewState === 'error' || !list) {
+  if (viewState === 'error' || !listData) {
     return <ErrorAlert title={t('shared.errorTitle')} message={t('shared.errorMessage')} />;
   }
 
-  const uncheckedItems = list.items.filter((item) => !item.isChecked);
-  const checkedItems = list.items.filter((item) => item.isChecked);
-
   const getPermissionLabel = (permission: string) => {
     switch (permission) {
-      case 'VIEW':
+      case 'READ':
         return t('shared.permissionView');
       case 'CHECK':
         return t('shared.permissionCheck');
@@ -137,62 +94,18 @@ export default function SharedListView({ token }: SharedListViewProps) {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">{list.name}</h2>
-        <Badge>{getPermissionLabel(list.permission)}</Badge>
+        <h2 className="text-2xl font-bold text-gray-900">{listData.name}</h2>
+        <Badge>{getPermissionLabel(listData.permission)}</Badge>
       </div>
-
-      {/* Unchecked Items */}
-      {uncheckedItems.length > 0 && (
-        <div className="mb-6 rounded-lg bg-white p-4 shadow">
-          <ul className="divide-y divide-gray-200">
-            {uncheckedItems.map((item) => (
-              <li key={item.id} className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={item.isChecked}
-                    onChange={() => handleToggleCheck(item)}
-                    disabled={!canCheck}
-                    className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  <span className="text-gray-900">{item.name}</span>
-                  <span className="text-sm text-gray-500">
-                    {item.quantity} {item.unit}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Checked Items Section */}
-      {checkedItems.length > 0 && (
-        <div className="rounded-lg bg-gray-50 p-4">
-          <h3 className="mb-3 text-sm font-medium text-gray-700">{t('shared.checkedItems')}</h3>
-          <ul className="divide-y divide-gray-200">
-            {checkedItems.map((item) => (
-              <li key={item.id} className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={item.isChecked}
-                    onChange={() => handleToggleCheck(item)}
-                    disabled={!canCheck}
-                    className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  <span className="line-through text-gray-500">{item.name}</span>
-                  <span className="text-sm text-gray-500">
-                    {item.quantity} {item.unit}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {list.items.length === 0 && <EmptyState title={t('shared.noItems')} />}
+      <ShoppingListView
+        listId={listData.id}
+        shareToken={token}
+        permission={listData.permission}
+        sharedListName={listData.name}
+        sharedItems={items}
+        onSharedItemsChange={handleItemsChange}
+        onBack={() => {}}
+      />
     </div>
   );
 }

@@ -146,7 +146,7 @@
     "readOnly": "Basahin lang",
     "canCheckItems": "Makakapag-check ng mga item",
     "canEdit": "Makakapag-edit",
-    "expiresInDays": "Mag-e-expire sa (araw)",
+    "expiresIn": "Mag-e-expire sa",
     "createLink": "Gumawa ng Link",
     "creatingLink": "Gumagawa...",
     "shareLink": "Link ng Pagbabahagi",

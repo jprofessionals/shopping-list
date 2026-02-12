@@ -50,7 +50,7 @@ class ShareViewModel(
                     type = "user",
                     permission = permission,
                     accountId = accountId,
-                    expirationDays = 0,
+                    expirationHours = 0,
                 )
                 _uiState.update {
                     it.copy(shares = it.shares + share)
@@ -63,7 +63,7 @@ class ShareViewModel(
         }
     }
 
-    fun createLinkShare(listId: String, permission: String, expirationDays: Int = 7) {
+    fun createLinkShare(listId: String, permission: String, expirationHours: Int = 24) {
         viewModelScope.launch {
             _uiState.update { it.copy(error = null) }
             try {
@@ -72,7 +72,7 @@ class ShareViewModel(
                     type = "link",
                     permission = permission,
                     accountId = null,
-                    expirationDays = expirationDays,
+                    expirationHours = expirationHours,
                 )
                 _uiState.update {
                     it.copy(

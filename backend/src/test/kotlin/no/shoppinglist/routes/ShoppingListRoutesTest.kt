@@ -713,7 +713,7 @@ class ShoppingListRoutesTest :
                     client.post("/lists/$listId/shares") {
                         header(HttpHeaders.Authorization, "Bearer $token")
                         contentType(ContentType.Application.Json)
-                        setBody("""{"type": "LINK", "permission": "CHECK", "expirationDays": 7}""")
+                        setBody("""{"type": "LINK", "permission": "CHECK", "expirationHours": 24}""")
                     }
 
                 response.status shouldBe HttpStatusCode.Created
@@ -745,7 +745,7 @@ class ShoppingListRoutesTest :
                 client.post("/lists/$listId/shares") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
-                    setBody("""{"type": "LINK", "permission": "READ", "expirationDays": 7}""")
+                    setBody("""{"type": "LINK", "permission": "READ", "expirationHours": 24}""")
                 }
 
                 val response =
@@ -815,7 +815,7 @@ class ShoppingListRoutesTest :
                     client.post("/lists/$listId/shares") {
                         header(HttpHeaders.Authorization, "Bearer $token")
                         contentType(ContentType.Application.Json)
-                        setBody("""{"type": "LINK", "permission": "READ", "expirationDays": 7}""")
+                        setBody("""{"type": "LINK", "permission": "READ", "expirationHours": 24}""")
                     }
                 val shareId =
                     Json
@@ -900,7 +900,7 @@ class ShoppingListRoutesTest :
                     client.post("/lists/$listId/shares") {
                         header(HttpHeaders.Authorization, "Bearer $token")
                         contentType(ContentType.Application.Json)
-                        setBody("""{"type": "LINK", "permission": "INVALID", "expirationDays": 7}""")
+                        setBody("""{"type": "LINK", "permission": "INVALID", "expirationHours": 24}""")
                     }
 
                 response.status shouldBe HttpStatusCode.BadRequest

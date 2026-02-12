@@ -146,7 +146,7 @@
     "readOnly": "Read only",
     "canCheckItems": "Can check items",
     "canEdit": "Can edit",
-    "expiresInDays": "Expires in (days)",
+    "expiresIn": "Expires in",
     "createLink": "Create Link",
     "creatingLink": "Creating...",
     "shareLink": "Share Link",

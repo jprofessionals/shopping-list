@@ -16,17 +16,35 @@ import { EmptyState, ErrorAlert, useToast } from '../common';
 import ListItemRow from './ListItemRow';
 import AutocompleteInput, { type ItemSuggestion } from './AutocompleteInput';
 import { parseItemInput } from '../../utils/parseItemInput';
-import { apiFetch } from '../../services/api';
+import { apiFetch, API_BASE } from '../../services/api';
 import CommentFeed from '../comments/CommentFeed';
 
 const UNDO_DURATION = 30000; // 30 seconds for undo
 const PULL_THRESHOLD = 80; // pixels to trigger refresh
+
+export type SharePermission = 'READ' | 'CHECK' | 'WRITE';
+
+function sharedFetch(shareToken: string, path: string, options?: RequestInit) {
+  return fetch(`${API_BASE}/shared/${shareToken}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+}
 
 interface ShoppingListViewProps {
   listId: string;
   onBack: () => void;
   onShareClick?: () => void;
   onPinToggle?: () => void;
+  // Props for shared-link access:
+  shareToken?: string;
+  permission?: SharePermission;
+  sharedListName?: string;
+  sharedItems?: ListItem[];
+  onSharedItemsChange?: (items: ListItem[]) => void;
 }
 
 export default function ShoppingListView({
@@ -34,6 +52,11 @@ export default function ShoppingListView({
   onBack,
   onShareClick,
   onPinToggle,
+  shareToken,
+  permission: permissionProp,
+  sharedListName,
+  sharedItems,
+  onSharedItemsChange,
 }: ShoppingListViewProps) {
   const { t } = useTranslation();
   const [itemName, setItemName] = useState('');
@@ -45,19 +68,29 @@ export default function ShoppingListView({
   const [pullDistance, setPullDistance] = useState(0);
   const [smartParsingEnabled, setSmartParsingEnabled] = useState(false);
 
+  // Default permission to WRITE when not in shared mode
+  const permission = permissionProp ?? 'WRITE';
+  const isShared = !!shareToken;
+  const canWrite = permission === 'WRITE';
+
   const dispatch = useAppDispatch();
   const token = useAppSelector((state) => state.auth.token);
   const list = useAppSelector((state) => state.lists.items.find((l) => l.id === listId));
-  const items = useAppSelector((state) => state.lists.currentListItems);
+  const reduxItems = useAppSelector((state) => state.lists.currentListItems);
+  const items = useMemo(
+    () => (isShared ? sharedItems || [] : reduxItems),
+    [isShared, sharedItems, reduxItems]
+  );
+  const listName = isShared ? sharedListName : list?.name;
   const { showToast } = useToast();
   const deletedItemsRef = useRef<ListItem[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef(0);
 
-  // Fetch smart parsing preference
+  // Fetch smart parsing preference (only for authenticated mode)
   useEffect(() => {
-    if (!token) return;
+    if (isShared || !token) return;
     apiFetch('/preferences')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -66,7 +99,7 @@ export default function ShoppingListView({
         }
       })
       .catch(() => {});
-  }, [token]);
+  }, [isShared, token]);
 
   const uncheckedItems = useMemo(() => items.filter((item) => !item.isChecked), [items]);
   const checkedItems = useMemo(() => items.filter((item) => item.isChecked), [items]);
@@ -75,9 +108,9 @@ export default function ShoppingListView({
     [uncheckedItems, checkedItems]
   );
 
-  // Pull-to-refresh handlers
+  // Pull-to-refresh handlers (disabled for shared mode)
   const handleRefresh = useCallback(async () => {
-    if (!token || isRefreshing) return;
+    if (isShared || !token || isRefreshing) return;
     setIsRefreshing(true);
     try {
       const response = await apiFetch(`/lists/${listId}/items`);
@@ -91,29 +124,38 @@ export default function ShoppingListView({
       setIsRefreshing(false);
       setPullDistance(0);
     }
-  }, [token, listId, dispatch, isRefreshing]);
+  }, [isShared, token, listId, dispatch, isRefreshing]);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (containerRef.current?.scrollTop === 0) {
-      touchStartY.current = e.touches[0].clientY;
-    }
-  }, []);
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (isShared) return;
+      if (containerRef.current?.scrollTop === 0) {
+        touchStartY.current = e.touches[0].clientY;
+      }
+    },
+    [isShared]
+  );
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (touchStartY.current === 0) return;
-    const currentY = e.touches[0].clientY;
-    const distance = Math.max(0, currentY - touchStartY.current);
-    setPullDistance(Math.min(distance, PULL_THRESHOLD * 1.5));
-  }, []);
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (isShared) return;
+      if (touchStartY.current === 0) return;
+      const currentY = e.touches[0].clientY;
+      const distance = Math.max(0, currentY - touchStartY.current);
+      setPullDistance(Math.min(distance, PULL_THRESHOLD * 1.5));
+    },
+    [isShared]
+  );
 
   const handleTouchEnd = useCallback(() => {
+    if (isShared) return;
     if (pullDistance >= PULL_THRESHOLD) {
       handleRefresh();
     } else {
       setPullDistance(0);
     }
     touchStartY.current = 0;
-  }, [pullDistance, handleRefresh]);
+  }, [isShared, pullDistance, handleRefresh]);
 
   const handleSuggestionSelect = useCallback((suggestion: ItemSuggestion) => {
     setItemName(suggestion.name);
@@ -127,7 +169,7 @@ export default function ShoppingListView({
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!itemName.trim() || !token) return;
+    if (!itemName.trim()) return;
 
     let finalName = itemName.trim();
     let finalQuantity = parseInt(quantity) || 1;
@@ -140,15 +182,36 @@ export default function ShoppingListView({
       if (parsed.unit != null) finalUnit = parsed.unit;
     }
 
+    const body = JSON.stringify({
+      name: finalName,
+      quantity: finalQuantity,
+      unit: finalUnit,
+    });
+
+    if (isShared && shareToken) {
+      try {
+        const response = await sharedFetch(shareToken, '/items', {
+          method: 'POST',
+          body,
+        });
+        if (!response.ok) throw new Error('Failed to add item');
+        const newItem: ListItem = await response.json();
+        onSharedItemsChange?.([...(sharedItems || []), newItem]);
+        setItemName('');
+        setQuantity('1');
+        setUnit('');
+      } catch (err) {
+        console.error('Failed to add item:', err);
+      }
+      return;
+    }
+
+    if (!token) return;
     try {
       const response = await apiFetch(`/lists/${listId}/items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: finalName,
-          quantity: finalQuantity,
-          unit: finalUnit,
-        }),
+        body,
       });
 
       if (!response.ok) throw new Error('Failed to add item');
@@ -165,6 +228,27 @@ export default function ShoppingListView({
 
   const handleToggleCheck = useCallback(
     async (item: ListItem) => {
+      if (isShared && shareToken) {
+        try {
+          const response = await sharedFetch(shareToken, `/items/${item.id}/check`, {
+            method: 'POST',
+            body: JSON.stringify({ isChecked: !item.isChecked }),
+          });
+          if (!response.ok) throw new Error('Failed to toggle item');
+          const data = await response.json();
+          onSharedItemsChange?.(
+            (sharedItems || []).map((i) =>
+              i.id === item.id
+                ? { ...i, isChecked: data.isChecked, checkedByName: data.checkedByName }
+                : i
+            )
+          );
+        } catch (err) {
+          console.error('Failed to toggle item:', err);
+        }
+        return;
+      }
+
       if (!token) return;
 
       try {
@@ -188,11 +272,24 @@ export default function ShoppingListView({
         console.error('Failed to toggle item:', err);
       }
     },
-    [token, listId, dispatch]
+    [isShared, shareToken, sharedItems, onSharedItemsChange, token, listId, dispatch]
   );
 
   const handleRemoveItem = useCallback(
     async (itemId: string) => {
+      if (isShared && shareToken) {
+        try {
+          const response = await sharedFetch(shareToken, `/items/${itemId}`, {
+            method: 'DELETE',
+          });
+          if (!response.ok) throw new Error('Failed to delete item');
+          onSharedItemsChange?.((sharedItems || []).filter((i) => i.id !== itemId));
+        } catch (err) {
+          console.error('Failed to delete item:', err);
+        }
+        return;
+      }
+
       if (!token) return;
 
       try {
@@ -207,11 +304,34 @@ export default function ShoppingListView({
         console.error('Failed to delete item:', err);
       }
     },
-    [token, listId, dispatch]
+    [isShared, shareToken, sharedItems, onSharedItemsChange, token, listId, dispatch]
   );
 
   const handleQuantityChange = useCallback(
     async (item: ListItem, newQuantity: number) => {
+      if (isShared && shareToken) {
+        try {
+          const response = await sharedFetch(shareToken, `/items/${item.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              name: item.name,
+              quantity: newQuantity,
+              unit: item.unit,
+            }),
+          });
+          if (!response.ok) throw new Error('Failed to update item quantity');
+          const updatedItem: ListItem = await response.json();
+          onSharedItemsChange?.(
+            (sharedItems || []).map((i) =>
+              i.id === item.id ? { ...i, quantity: updatedItem.quantity } : i
+            )
+          );
+        } catch (err) {
+          console.error('Failed to update item quantity:', err);
+        }
+        return;
+      }
+
       if (!token) return;
 
       try {
@@ -233,10 +353,32 @@ export default function ShoppingListView({
         console.error('Failed to update item quantity:', err);
       }
     },
-    [token, listId, dispatch]
+    [isShared, shareToken, sharedItems, onSharedItemsChange, token, listId, dispatch]
   );
 
   const handleUndoClearChecked = useCallback(async () => {
+    if (isShared && shareToken) {
+      if (deletedItemsRef.current.length === 0) return;
+      try {
+        const itemsToRestore = deletedItemsRef.current.map((item) => ({
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+        }));
+        const response = await sharedFetch(shareToken, '/items/bulk', {
+          method: 'POST',
+          body: JSON.stringify({ items: itemsToRestore }),
+        });
+        if (!response.ok) throw new Error('Failed to restore items');
+        const restoredItems: ListItem[] = await response.json();
+        onSharedItemsChange?.([...(sharedItems || []), ...restoredItems]);
+        deletedItemsRef.current = [];
+      } catch (err) {
+        console.error('Failed to restore items:', err);
+      }
+      return;
+    }
+
     if (!token || deletedItemsRef.current.length === 0) return;
 
     try {
@@ -260,10 +402,43 @@ export default function ShoppingListView({
     } catch (err) {
       console.error('Failed to restore items:', err);
     }
-  }, [token, listId, dispatch]);
+  }, [isShared, shareToken, sharedItems, onSharedItemsChange, token, listId, dispatch]);
 
   const handleClearChecked = async () => {
-    if (!token || checkedItems.length === 0) return;
+    if (checkedItems.length === 0) return;
+
+    if (isShared && shareToken) {
+      setIsClearingChecked(true);
+      try {
+        const response = await sharedFetch(shareToken, '/items/checked', {
+          method: 'DELETE',
+        });
+        if (!response.ok) throw new Error('Failed to clear checked items');
+        const data: { deletedItemIds: string[] } = await response.json();
+
+        deletedItemsRef.current = checkedItems.filter((item) =>
+          data.deletedItemIds.includes(item.id)
+        );
+
+        onSharedItemsChange?.(
+          (sharedItems || []).filter((item) => !data.deletedItemIds.includes(item.id))
+        );
+
+        const count = data.deletedItemIds.length;
+        showToast({
+          message: t('shoppingListView.clearedItems', { count }),
+          onUndo: handleUndoClearChecked,
+          duration: UNDO_DURATION,
+        });
+      } catch (err) {
+        console.error('Failed to clear checked items:', err);
+      } finally {
+        setIsClearingChecked(false);
+      }
+      return;
+    }
+
+    if (!token) return;
 
     setIsClearingChecked(true);
     try {
@@ -299,6 +474,9 @@ export default function ShoppingListView({
 
   // Keyboard shortcuts
   useEffect(() => {
+    // READ permission in shared mode: no keyboard shortcuts
+    if (isShared && permission === 'READ') return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if typing in an input
       if (
@@ -306,6 +484,27 @@ export default function ShoppingListView({
         e.target instanceof HTMLTextAreaElement ||
         e.target instanceof HTMLSelectElement
       ) {
+        return;
+      }
+
+      // For CHECK permission, only allow space (toggle) and arrow navigation
+      if (isShared && permission === 'CHECK') {
+        switch (e.key) {
+          case 'ArrowDown':
+            e.preventDefault();
+            setFocusedItemIndex((prev) => Math.min(prev + 1, allItems.length - 1));
+            break;
+          case 'ArrowUp':
+            e.preventDefault();
+            setFocusedItemIndex((prev) => Math.max(prev - 1, -1));
+            break;
+          case ' ':
+            e.preventDefault();
+            if (focusedItemIndex >= 0 && focusedItemIndex < allItems.length) {
+              handleToggleCheck(allItems[focusedItemIndex]);
+            }
+            break;
+        }
         return;
       }
 
@@ -367,6 +566,8 @@ export default function ShoppingListView({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
+    isShared,
+    permission,
     focusedItemIndex,
     allItems,
     showToast,
@@ -376,7 +577,8 @@ export default function ShoppingListView({
     t,
   ]);
 
-  if (!list) {
+  // In authenticated mode, require list from Redux
+  if (!isShared && !list) {
     return (
       <ErrorAlert message={t('shoppingListView.listNotFound')}>
         <Link to="/lists" className="mt-2 text-sm text-red-600 underline" onClick={onBack}>
@@ -386,6 +588,39 @@ export default function ShoppingListView({
     );
   }
 
+  // Determine ListItemRow props based on permission
+  const getItemRowProps = (item: ListItem) => {
+    const base = {
+      onToggleCheck: () => handleToggleCheck(item),
+    };
+
+    if (permission === 'READ') {
+      return {
+        ...base,
+        disabled: true,
+        onDelete: () => {},
+        onQuantityChange: undefined,
+      };
+    }
+
+    if (permission === 'CHECK' && isShared) {
+      return {
+        ...base,
+        disabled: false,
+        onDelete: () => {},
+        onQuantityChange: undefined,
+      };
+    }
+
+    // WRITE or authenticated mode
+    return {
+      ...base,
+      disabled: false,
+      onDelete: () => handleRemoveItem(item.id),
+      onQuantityChange: (newQty: number) => handleQuantityChange(item, newQty),
+    };
+  };
+
   return (
     <div
       ref={containerRef}
@@ -394,8 +629,8 @@ export default function ShoppingListView({
       onTouchEnd={handleTouchEnd}
       className="relative"
     >
-      {/* Pull-to-refresh indicator */}
-      {pullDistance > 0 && (
+      {/* Pull-to-refresh indicator (authenticated mode only) */}
+      {!isShared && pullDistance > 0 && (
         <div
           className="absolute left-0 right-0 flex items-center justify-center text-gray-500 transition-transform"
           style={{ transform: `translateY(${pullDistance - 40}px)` }}
@@ -411,28 +646,30 @@ export default function ShoppingListView({
         </div>
       )}
 
-      <div className="mb-6">
-        <Link
-          to="/lists"
-          onClick={onBack}
-          className="flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-        >
-          <span className="mr-1">&larr;</span> {t('common.back')}
-        </Link>
-      </div>
+      {!isShared && (
+        <div className="mb-6">
+          <Link
+            to="/lists"
+            onClick={onBack}
+            className="flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <span className="mr-1">&larr;</span> {t('common.back')}
+          </Link>
+        </div>
+      )}
 
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{list.name}</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{listName}</h2>
         <div className="flex items-center gap-2">
-          {onPinToggle && (
+          {!isShared && onPinToggle && (
             <button
               onClick={onPinToggle}
               className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                list.isPinned
+                list?.isPinned
                   ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-700'
               }`}
-              aria-label={list.isPinned ? t('common.unpin') : t('common.pin')}
+              aria-label={list?.isPinned ? t('common.unpin') : t('common.pin')}
               data-testid="pin-toggle"
             >
               <svg
@@ -445,7 +682,7 @@ export default function ShoppingListView({
               </svg>
             </button>
           )}
-          {list.isOwner && onShareClick && (
+          {!isShared && list?.isOwner && onShareClick && (
             <button
               onClick={onShareClick}
               className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
@@ -456,37 +693,50 @@ export default function ShoppingListView({
         </div>
       </div>
 
-      {/* Add Item Form */}
-      <form onSubmit={handleAddItem} className="mb-6 flex gap-2">
-        <AutocompleteInput
-          value={itemName}
-          onChange={setItemName}
-          onSuggestionSelect={handleSuggestionSelect}
-          placeholder={t('shoppingListView.itemName')}
-          smartParsingEnabled={smartParsingEnabled}
-        />
-        <input
-          type="number"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-          placeholder={t('shoppingListView.qty')}
-          min="1"
-          className="w-20 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-        />
-        <input
-          type="text"
-          value={unit}
-          onChange={(e) => setUnit(e.target.value)}
-          placeholder={t('shoppingListView.unit')}
-          className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-        />
-        <button
-          type="submit"
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-        >
-          {t('common.add')}
-        </button>
-      </form>
+      {/* Add Item Form (WRITE permission only) */}
+      {(!isShared || canWrite) && (
+        <form onSubmit={handleAddItem} className="mb-6 flex gap-2">
+          {!isShared ? (
+            <AutocompleteInput
+              value={itemName}
+              onChange={setItemName}
+              onSuggestionSelect={handleSuggestionSelect}
+              placeholder={t('shoppingListView.itemName')}
+              smartParsingEnabled={smartParsingEnabled}
+            />
+          ) : (
+            <input
+              ref={inputRef}
+              type="text"
+              value={itemName}
+              onChange={(e) => setItemName(e.target.value)}
+              placeholder={t('shoppingListView.itemName')}
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          )}
+          <input
+            type="number"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            placeholder={t('shoppingListView.qty')}
+            min="1"
+            className="w-20 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+          <input
+            type="text"
+            value={unit}
+            onChange={(e) => setUnit(e.target.value)}
+            placeholder={t('shoppingListView.unit')}
+            className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+          <button
+            type="submit"
+            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+          >
+            {t('common.add')}
+          </button>
+        </form>
+      )}
 
       {/* Unchecked Items */}
       {uncheckedItems.length > 0 && (
@@ -496,9 +746,7 @@ export default function ShoppingListView({
               <ListItemRow
                 key={item.id}
                 item={item}
-                onToggleCheck={() => handleToggleCheck(item)}
-                onDelete={() => handleRemoveItem(item.id)}
-                onQuantityChange={(newQty) => handleQuantityChange(item, newQty)}
+                {...getItemRowProps(item)}
                 isFocused={focusedItemIndex === index}
               />
             ))}
@@ -513,25 +761,25 @@ export default function ShoppingListView({
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-200">
               {t('shoppingListView.checkedItems')}
             </h3>
-            <button
-              onClick={handleClearChecked}
-              disabled={isClearingChecked}
-              className="text-sm font-medium text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-              data-testid="clear-checked-button"
-            >
-              {isClearingChecked
-                ? t('shoppingListView.clearing')
-                : t('shoppingListView.clearChecked')}
-            </button>
+            {(!isShared || canWrite) && (
+              <button
+                onClick={handleClearChecked}
+                disabled={isClearingChecked}
+                className="text-sm font-medium text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                data-testid="clear-checked-button"
+              >
+                {isClearingChecked
+                  ? t('shoppingListView.clearing')
+                  : t('shoppingListView.clearChecked')}
+              </button>
+            )}
           </div>
           <ul className="divide-y divide-gray-200 dark:divide-gray-700">
             {checkedItems.map((item, index) => (
               <ListItemRow
                 key={item.id}
                 item={item}
-                onToggleCheck={() => handleToggleCheck(item)}
-                onDelete={() => handleRemoveItem(item.id)}
-                onQuantityChange={(newQty) => handleQuantityChange(item, newQty)}
+                {...getItemRowProps(item)}
                 isFocused={focusedItemIndex === uncheckedItems.length + index}
               />
             ))}
@@ -546,9 +794,11 @@ export default function ShoppingListView({
         />
       )}
 
-      <div className="mt-6">
-        <CommentFeed targetType="LIST" targetId={listId} />
-      </div>
+      {!isShared && (
+        <div className="mt-6">
+          <CommentFeed targetType="LIST" targetId={listId} />
+        </div>
+      )}
     </div>
   );
 }

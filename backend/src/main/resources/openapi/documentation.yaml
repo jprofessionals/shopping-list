@@ -352,10 +352,10 @@ components:
         permission:
           type: string
           enum: [READ, CHECK, WRITE]
-        expirationDays:
+        expirationHours:
           type: integer
-          default: 7
-          description: Only used for LINK shares
+          default: 24
+          description: Only used for LINK shares (1-168 hours)
 
     ShareResponse:
       type: object
