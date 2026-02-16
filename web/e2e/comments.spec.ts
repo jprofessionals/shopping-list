@@ -102,12 +102,13 @@ test.describe('Comments on Lists', () => {
     // Handle the confirm dialog and click Delete
     page.on('dialog', (dialog) => dialog.accept());
 
-    // Click Delete and wait for the API call to complete
+    // Click Delete on the comment (scoped to the comment element) and wait for the API call
+    const commentEl = page.locator('[data-testid^="comment-"]', { hasText: commentText });
     await Promise.all([
       page.waitForResponse(
         (resp) => resp.url().includes('/comments/') && resp.request().method() === 'DELETE'
       ),
-      page.getByRole('button', { name: 'Delete' }).click(),
+      commentEl.getByRole('button', { name: 'Delete' }).click(),
     ]);
 
     // Verify comment is removed
