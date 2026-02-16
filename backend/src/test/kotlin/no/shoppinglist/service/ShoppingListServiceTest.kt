@@ -9,9 +9,11 @@ import no.shoppinglist.domain.Accounts
 import no.shoppinglist.domain.Comments
 import no.shoppinglist.domain.HouseholdMemberships
 import no.shoppinglist.domain.Households
+import no.shoppinglist.domain.ListActivities
 import no.shoppinglist.domain.ListItems
 import no.shoppinglist.domain.ListShares
 import no.shoppinglist.domain.MembershipRole
+import no.shoppinglist.domain.PinnedLists
 import no.shoppinglist.domain.RecurringItems
 import no.shoppinglist.domain.SharePermission
 import no.shoppinglist.domain.ShoppingLists
@@ -38,6 +40,8 @@ class ShoppingListServiceTest :
                     RecurringItems,
                     ListItems,
                     ListShares,
+                    ListActivities,
+                    PinnedLists,
                     Comments,
                 )
             }
@@ -59,6 +63,8 @@ class ShoppingListServiceTest :
             transaction(db) {
                 SchemaUtils.drop(
                     Comments,
+                    PinnedLists,
+                    ListActivities,
                     ListShares,
                     ListItems,
                     RecurringItems,

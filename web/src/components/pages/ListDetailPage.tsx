@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   setItems,
   addList,
   setLists,
+  removeList,
   setCurrentList,
   type ShoppingList,
 } from '../../store/listsSlice';
@@ -15,6 +17,7 @@ import { LoadingSpinner, ErrorAlert } from '../common';
 export default function ListDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const token = useAppSelector((state) => state.auth.token);
   const lists = useAppSelector((state) => state.lists.items);
@@ -70,6 +73,19 @@ export default function ListDetailPage() {
     navigate('/lists');
   };
 
+  const handleDelete = async () => {
+    if (!token || !id || !confirm(t('shoppingListView.confirmDeleteList'))) return;
+    try {
+      const response = await apiFetch(`/lists/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        dispatch(removeList(id));
+        navigate('/lists');
+      }
+    } catch (err) {
+      console.error('Failed to delete list:', err);
+    }
+  };
+
   const handlePinToggle = async () => {
     if (!token || !id) return;
     const isPinned = list?.isPinned;
@@ -120,6 +136,7 @@ export default function ListDetailPage() {
         onBack={handleBack}
         onShareClick={list?.isOwner ? () => setShowShareModal(true) : undefined}
         onPinToggle={handlePinToggle}
+        onDeleteClick={list?.isOwner ? handleDelete : undefined}
       />
       {showShareModal && <ShareListModal listId={id} onClose={() => setShowShareModal(false)} />}
     </>

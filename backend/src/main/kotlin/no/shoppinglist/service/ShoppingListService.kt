@@ -6,10 +6,12 @@ import no.shoppinglist.domain.Comments
 import no.shoppinglist.domain.Household
 import no.shoppinglist.domain.HouseholdMembership
 import no.shoppinglist.domain.HouseholdMemberships
+import no.shoppinglist.domain.ListActivities
 import no.shoppinglist.domain.ListItem
 import no.shoppinglist.domain.ListItems
 import no.shoppinglist.domain.ListShare
 import no.shoppinglist.domain.ListShares
+import no.shoppinglist.domain.PinnedLists
 import no.shoppinglist.domain.SharePermission
 import no.shoppinglist.domain.ShareType
 import no.shoppinglist.domain.ShoppingList
@@ -137,6 +139,8 @@ class ShoppingListService(
 
     fun delete(id: UUID): Boolean =
         transaction(db) {
+            ListActivities.deleteWhere { list eq id }
+            PinnedLists.deleteWhere { list eq id }
             Comments.deleteWhere { (Comments.targetType eq CommentTargetType.LIST) and (Comments.targetId eq id) }
             ListShares.deleteWhere { list eq id }
             ListItems.deleteWhere { ListItems.list eq id }

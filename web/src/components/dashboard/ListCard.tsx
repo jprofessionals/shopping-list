@@ -10,6 +10,7 @@ interface ListCardProps {
   householdName?: string;
   onPin?: (listId: string) => void;
   onUnpin?: (listId: string) => void;
+  onDelete?: (listId: string) => void;
 }
 
 function formatRelativeTime(timestamp: string, t: TFunction): string {
@@ -60,7 +61,7 @@ function formatActivityMessage(
   }
 }
 
-export default function ListCard({ list, householdName, onPin, onUnpin }: ListCardProps) {
+export default function ListCard({ list, householdName, onPin, onUnpin, onDelete }: ListCardProps) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -119,6 +120,17 @@ export default function ListCard({ list, householdName, onPin, onUnpin }: ListCa
       }
     },
     [id, isPinned, onPin, onUnpin]
+  );
+
+  const handleDeleteClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (onDelete && confirm(t('shoppingLists.confirmDeleteList'))) {
+        onDelete(id);
+      }
+    },
+    [id, onDelete, t]
   );
 
   return (
@@ -190,27 +202,46 @@ export default function ListCard({ list, householdName, onPin, onUnpin }: ListCa
       )}
 
       {/* Quick actions (visible when expanded) */}
-      {isExpanded && (onPin || onUnpin) && (
+      {isExpanded && (onPin || onUnpin || (onDelete && list.isOwner)) && (
         <div
           className="mt-3 flex gap-2 border-t pt-3 dark:border-gray-700"
           data-testid="quick-actions"
           onClick={(e) => e.preventDefault()}
         >
-          <button
-            onClick={handlePinClick}
-            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-            data-testid="pin-action"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="h-4 w-4"
+          {(onPin || onUnpin) && (
+            <button
+              onClick={handlePinClick}
+              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+              data-testid="pin-action"
             >
-              <path d="M14 4v5c0 1.12.37 2.16 1 3H9c.65-.86 1-1.9 1-3V4h4m3-2H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3V4h1c.55 0 1-.45 1-1s-.45-1-1-1z" />
-            </svg>
-            {isPinned ? t('common.unpin') : t('common.pin')}
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="h-4 w-4"
+              >
+                <path d="M14 4v5c0 1.12.37 2.16 1 3H9c.65-.86 1-1.9 1-3V4h4m3-2H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3V4h1c.55 0 1-.45 1-1s-.45-1-1-1z" />
+              </svg>
+              {isPinned ? t('common.unpin') : t('common.pin')}
+            </button>
+          )}
+          {onDelete && list.isOwner && (
+            <button
+              onClick={handleDeleteClick}
+              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+              data-testid="delete-action"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="h-4 w-4"
+              >
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+              </svg>
+              {t('common.delete')}
+            </button>
+          )}
         </div>
       )}
     </Link>

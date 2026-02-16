@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setLists, setLoading as setListsLoading } from '../../store/listsSlice';
+import { setLists, removeList, setLoading as setListsLoading } from '../../store/listsSlice';
 import { apiFetch } from '../../services/api';
 import { ShoppingListsPage, CreateListModal } from '../shopping-list';
 
@@ -74,6 +74,23 @@ export default function ListsPage() {
     [token, lists, dispatch]
   );
 
+  const handleDelete = useCallback(
+    async (listId: string) => {
+      if (!token) return;
+      try {
+        const response = await apiFetch(`/lists/${listId}`, {
+          method: 'DELETE',
+        });
+        if (response.ok) {
+          dispatch(removeList(listId));
+        }
+      } catch (err) {
+        console.error('Failed to delete list:', err);
+      }
+    },
+    [token, dispatch]
+  );
+
   return (
     <>
       <ShoppingListsPage
@@ -81,6 +98,7 @@ export default function ListsPage() {
         onCreateClick={handleCreateClick}
         onPin={handlePin}
         onUnpin={handleUnpin}
+        onDelete={handleDelete}
       />
       {showCreateModal && <CreateListModal onClose={() => setShowCreateModal(false)} />}
     </>

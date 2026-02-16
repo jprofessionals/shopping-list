@@ -8,12 +8,14 @@ interface ShoppingListsPageProps {
   onCreateClick: () => void;
   onPin?: (listId: string) => void;
   onUnpin?: (listId: string) => void;
+  onDelete?: (listId: string) => void;
 }
 
 export default function ShoppingListsPage({
   onCreateClick,
   onPin,
   onUnpin,
+  onDelete,
 }: ShoppingListsPageProps) {
   const { t } = useTranslation();
   const { items: lists, isLoading } = useAppSelector((state) => state.lists);
@@ -83,7 +85,13 @@ export default function ShoppingListsPage({
               </h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {personalLists.map((list) => (
-                  <ListCard key={list.id} list={list} onPin={onPin} onUnpin={onUnpin} />
+                  <ListCard
+                    key={list.id}
+                    list={list}
+                    onPin={onPin}
+                    onUnpin={onUnpin}
+                    onDelete={onDelete}
+                  />
                 ))}
               </div>
             </div>
@@ -103,6 +111,7 @@ export default function ShoppingListsPage({
                     householdName={getHouseholdName(householdId)}
                     onPin={onPin}
                     onUnpin={onUnpin}
+                    onDelete={onDelete}
                   />
                 ))}
               </div>
