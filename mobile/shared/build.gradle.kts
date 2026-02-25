@@ -65,6 +65,7 @@ sqldelight {
     databases {
         create("ShoppingListDatabase") {
             packageName.set("no.shoppinglist.shared.cache")
+            version = 2
         }
     }
 }

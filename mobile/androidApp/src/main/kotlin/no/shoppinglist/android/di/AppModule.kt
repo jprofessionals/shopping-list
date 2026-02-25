@@ -43,7 +43,7 @@ val appModule = module {
     single { DatabaseDriverFactory(androidContext()) }
     single { ShoppingListDatabase(get<DatabaseDriverFactory>().createDriver()) }
     single { TokenStore(androidContext()) }
-    single { ApiClient(baseUrl = "http://10.0.2.2:8080", tokenStore = get()) }
+    single { ApiClient(baseUrl = "http://10.0.2.2:8080/api", tokenStore = get()) }
     single { ConnectivityMonitor(androidContext()) }
     single { I18n(androidContext()) }
 
@@ -67,7 +67,7 @@ val appModule = module {
 
     // Sync & WebSocket
     single { SyncManager(get(), get(), get()) }
-    single { WebSocketClient(baseUrl = "ws://10.0.2.2:8080", tokenStore = get()) }
+    single { WebSocketClient(baseUrl = "ws://10.0.2.2:8080/api", tokenStore = get()) }
     single { WebSocketEventHandler(get(), get(), get()) }
 
     // Notifications

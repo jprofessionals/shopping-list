@@ -4,10 +4,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.bearerAuth
-import io.ktor.client.request.post
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -15,6 +13,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.appendPathSegments
 import io.ktor.http.contentType
+import io.ktor.http.takeFrom
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import no.shoppinglist.shared.api.dto.RefreshRequest
@@ -36,7 +35,6 @@ class ApiClient(
     internal val httpClient = HttpClient {
         install(ContentNegotiation) { json(json) }
         install(HttpTimeout) { requestTimeoutMillis = 30_000 }
-        defaultRequest { url(baseUrl) }
     }
 
     suspend inline fun <reified T> authenticatedRequest(
@@ -45,6 +43,7 @@ class ApiClient(
         val token = tokenStore.getAccessToken() ?: throw AuthException("Not logged in")
 
         val response: HttpResponse = httpClient.request {
+            url.takeFrom(baseUrl)
             bearerAuth(token)
             block()
         }
@@ -54,6 +53,7 @@ class ApiClient(
                 ?: throw AuthException("No refresh token")
 
             val refreshResponse: HttpResponse = httpClient.request {
+                url.takeFrom(baseUrl)
                 method = io.ktor.http.HttpMethod.Post
                 url.appendPathSegments("auth", "refresh")
                 contentType(ContentType.Application.Json)
@@ -65,6 +65,7 @@ class ApiClient(
                 tokenStore.saveTokens(tokens.token, tokens.refreshToken)
 
                 val retryResponse: HttpResponse = httpClient.request {
+                    url.takeFrom(baseUrl)
                     bearerAuth(tokens.token)
                     block()
                 }
@@ -82,7 +83,10 @@ class ApiClient(
     suspend inline fun <reified T> unauthenticatedRequest(
         block: HttpRequestBuilder.() -> Unit,
     ): T {
-        val response: HttpResponse = httpClient.request(block)
+        val response: HttpResponse = httpClient.request {
+            url.takeFrom(baseUrl)
+            block()
+        }
         return response.body()
     }
 }
