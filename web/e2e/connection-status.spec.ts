@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { getApiUrl } from './e2e-utils';
 
-const API_URL = 'http://localhost:8080/api';
+const API_URL = getApiUrl();
 
 test.describe('Connection Status', () => {
   test.beforeEach(async ({ page }) => {

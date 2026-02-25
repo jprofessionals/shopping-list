@@ -1,5 +1,18 @@
 import { execSync } from 'child_process';
 
+function discoverPort(service: string, containerPort: number): string {
+  const output = execSync(
+    `docker compose -f docker-compose.e2e.yml port ${service} ${containerPort}`,
+    { cwd: '..', encoding: 'utf-8' }
+  ).trim();
+  // Output format: "0.0.0.0:12345" or ":::12345"
+  const port = output.split(':').pop();
+  if (!port) {
+    throw new Error(`Could not discover port for ${service}:${containerPort} (got: ${output})`);
+  }
+  return port;
+}
+
 async function globalSetup() {
   console.log('Starting E2E test environment via docker-compose...');
 
@@ -10,12 +23,26 @@ async function globalSetup() {
       stdio: 'inherit',
     });
 
+    // Discover dynamically assigned host ports
+    const backendPort = discoverPort('backend', 8080);
+    const backend2Port = discoverPort('backend-2', 8080);
+    const frontendPort = discoverPort('frontend', 5173);
+
+    console.log(
+      `Discovered ports — backend: ${backendPort}, backend-2: ${backend2Port}, frontend: ${frontendPort}`
+    );
+
+    // Export for playwright.config.ts and spec files
+    process.env.E2E_BACKEND_PORT = backendPort;
+    process.env.E2E_BACKEND_2_PORT = backend2Port;
+    process.env.E2E_FRONTEND_PORT = frontendPort;
+
     // Wait for backend to be ready
     console.log('Waiting for services to be ready...');
     let retries = 60; // 60 retries * 2 seconds = 2 minutes max wait
     while (retries > 0) {
       try {
-        execSync('curl -sf http://localhost:8080/api/health', { stdio: 'pipe' });
+        execSync(`curl -sf http://localhost:${backendPort}/api/health`, { stdio: 'pipe' });
         console.log('Backend is ready!');
         break;
       } catch {
@@ -37,7 +64,7 @@ async function globalSetup() {
     retries = 60;
     while (retries > 0) {
       try {
-        execSync('curl -sf http://localhost:8081/api/health', { stdio: 'pipe' });
+        execSync(`curl -sf http://localhost:${backend2Port}/api/health`, { stdio: 'pipe' });
         console.log('Backend-2 is ready!');
         break;
       } catch {
@@ -58,7 +85,7 @@ async function globalSetup() {
     retries = 30;
     while (retries > 0) {
       try {
-        execSync('curl -sf http://localhost:5173', { stdio: 'pipe' });
+        execSync(`curl -sf http://localhost:${frontendPort}`, { stdio: 'pipe' });
         console.log('Frontend is ready!');
         break;
       } catch {

@@ -9,7 +9,7 @@ export default defineConfig({
   reporter: 'html',
   timeout: 60000,
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: `http://localhost:${process.env.E2E_FRONTEND_PORT || '5173'}`,
     locale: 'en-US',
     trace: 'on-first-retry',
   },
