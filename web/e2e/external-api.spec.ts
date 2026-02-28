@@ -1,49 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { getApiUrl } from './e2e-utils';
+import { getApiUrl, createSharedListViaInternalApi } from './e2e-utils';
 
 const API_URL = getApiUrl();
-
-async function createSharedListViaInternalApi(
-  request: {
-    post: (url: string, opts?: object) => Promise<{ json: () => Promise<Record<string, string>> }>;
-  },
-  options: { items?: { name: string; quantity: number; unit?: string }[] } = {}
-) {
-  // Register a temporary user
-  const ts = Date.now();
-  const regRes = await request.post(`${API_URL}/auth/register`, {
-    data: {
-      email: `helper-${ts}@example.com`,
-      password: 'password123',
-      displayName: 'Helper User',
-    },
-  });
-  const { token: authToken } = await regRes.json();
-
-  // Create a list
-  const listRes = await request.post(`${API_URL}/lists`, {
-    headers: { Authorization: `Bearer ${authToken}` },
-    data: { name: `Shared List ${ts}`, isPersonal: true },
-  });
-  const list = await listRes.json();
-
-  // Add items if requested
-  for (const item of options.items ?? []) {
-    await request.post(`${API_URL}/lists/${list.id}/items`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-      data: item,
-    });
-  }
-
-  // Create a WRITE share
-  const shareRes = await request.post(`${API_URL}/lists/${list.id}/shares`, {
-    headers: { Authorization: `Bearer ${authToken}` },
-    data: { type: 'LINK', permission: 'WRITE', expirationHours: 168 },
-  });
-  const share = await shareRes.json();
-
-  return { shareToken: share.linkToken, listId: list.id, authToken };
-}
 
 test.describe('External API - List Creation', () => {
   test('POST /api/external/lists with title only returns shareToken, listId, widgetUrl', async ({

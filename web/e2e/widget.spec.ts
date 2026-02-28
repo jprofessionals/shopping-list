@@ -1,9 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
-import { getApiUrl } from './e2e-utils';
-
-const API_URL = getApiUrl();
+import { createSharedListViaInternalApi } from './e2e-utils';
 
 function getFrontendBaseUrl(): string {
   const port = process.env.E2E_FRONTEND_PORT || '5173';
@@ -18,20 +16,13 @@ test.describe('Shopping List Widget', () => {
   });
 
   test('renders list title and items from shared token', async ({ page }) => {
-    const ts = Date.now();
-
-    // Create a list with items via external API
-    const createRes = await page.request.post(`${API_URL}/external/lists`, {
-      data: {
-        title: `Widget Test ${ts}`,
-        items: [
-          { name: 'Apples', quantity: 3, unit: 'pcs' },
-          { name: 'Milk', quantity: 1, unit: 'L' },
-        ],
-      },
+    // Create a list with items via internal API (avoids rate limiting)
+    const { shareToken } = await createSharedListViaInternalApi(page.request, {
+      items: [
+        { name: 'Apples', quantity: 3, unit: 'pcs' },
+        { name: 'Milk', quantity: 1, unit: 'L' },
+      ],
     });
-    expect(createRes.status()).toBe(201);
-    const { shareToken } = await createRes.json();
 
     const baseUrl = getFrontendBaseUrl();
 
@@ -54,22 +45,15 @@ test.describe('Shopping List Widget', () => {
     await page.addScriptTag({ path: 'dist-widget/widget.js' });
 
     // Wait for widget to load data and render
-    await expect(page.getByText(`Widget Test ${ts}`)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Shared List')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Apples')).toBeVisible();
     await expect(page.getByText('Milk')).toBeVisible();
   });
 
   test('can check and uncheck an item', async ({ page }) => {
-    const ts = Date.now();
-
-    const createRes = await page.request.post(`${API_URL}/external/lists`, {
-      data: {
-        title: `Widget Check ${ts}`,
-        items: [{ name: 'Bananas', quantity: 2, unit: 'pcs' }],
-      },
+    const { shareToken } = await createSharedListViaInternalApi(page.request, {
+      items: [{ name: 'Bananas', quantity: 2, unit: 'pcs' }],
     });
-    expect(createRes.status()).toBe(201);
-    const { shareToken } = await createRes.json();
 
     const baseUrl = getFrontendBaseUrl();
     await page.goto('/');
@@ -102,16 +86,9 @@ test.describe('Shopping List Widget', () => {
   });
 
   test('can add a new item', async ({ page }) => {
-    const ts = Date.now();
-
-    const createRes = await page.request.post(`${API_URL}/external/lists`, {
-      data: {
-        title: `Widget Add ${ts}`,
-        items: [{ name: 'Eggs', quantity: 12 }],
-      },
+    const { shareToken } = await createSharedListViaInternalApi(page.request, {
+      items: [{ name: 'Eggs', quantity: 12 }],
     });
-    expect(createRes.status()).toBe(201);
-    const { shareToken } = await createRes.json();
 
     const baseUrl = getFrontendBaseUrl();
     await page.goto('/');
