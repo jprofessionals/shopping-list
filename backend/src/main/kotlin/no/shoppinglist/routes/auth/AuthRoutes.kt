@@ -6,6 +6,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import no.shoppinglist.config.AuthConfig
 import no.shoppinglist.service.AccountService
+import no.shoppinglist.service.ExternalListService
 import no.shoppinglist.service.JwtService
 import no.shoppinglist.service.RefreshTokenService
 import no.shoppinglist.service.TokenBlacklistService
@@ -16,15 +17,16 @@ fun Route.authRoutes(
     jwtService: JwtService,
     refreshTokenService: RefreshTokenService,
     tokenBlacklistService: TokenBlacklistService,
+    externalListService: ExternalListService? = null,
 ) {
     route("/auth") {
         configRoute(authConfig)
         if (authConfig.local.enabled) {
-            loginRoute(accountService, jwtService, refreshTokenService)
-            registerRoute(accountService, jwtService, refreshTokenService)
+            loginRoute(accountService, jwtService, refreshTokenService, externalListService)
+            registerRoute(accountService, jwtService, refreshTokenService, externalListService)
         }
         if (authConfig.google.enabled) {
-            googleAuthRoutes(authConfig, accountService, jwtService, refreshTokenService)
+            googleAuthRoutes(authConfig, accountService, jwtService, refreshTokenService, externalListService)
         }
         refreshRoute(accountService, jwtService, refreshTokenService)
         authenticatedRoutes(accountService, tokenBlacklistService, refreshTokenService)

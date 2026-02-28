@@ -6,6 +6,7 @@ import io.ktor.server.routing.get
 import no.shoppinglist.config.AuthConfig
 import no.shoppinglist.domain.Account
 import no.shoppinglist.service.AccountService
+import no.shoppinglist.service.ExternalListService
 import no.shoppinglist.service.GoogleAuthService
 import no.shoppinglist.service.GoogleUserInfo
 import no.shoppinglist.service.JwtService
@@ -20,11 +21,12 @@ internal fun Route.googleAuthRoutes(
     accountService: AccountService,
     jwtService: JwtService,
     refreshTokenService: RefreshTokenService,
+    externalListService: ExternalListService? = null,
 ) {
     val googleAuthService = GoogleAuthService(authConfig.google)
 
     googleInitiateRoute(googleAuthService)
-    googleCallbackRoute(googleAuthService, accountService, jwtService, refreshTokenService)
+    googleCallbackRoute(googleAuthService, accountService, jwtService, refreshTokenService, externalListService)
 }
 
 private fun Route.googleInitiateRoute(googleAuthService: GoogleAuthService) {
@@ -40,6 +42,7 @@ private fun Route.googleCallbackRoute(
     accountService: AccountService,
     jwtService: JwtService,
     refreshTokenService: RefreshTokenService,
+    externalListService: ExternalListService? = null,
 ) {
     get("/google/callback") {
         val code = call.request.queryParameters["code"]
@@ -61,6 +64,7 @@ private fun Route.googleCallbackRoute(
             return@get
         }
 
+        externalListService?.claimPendingLists(account.id.value, account.email)
         val token = jwtService.generateToken(account.id.value, account.email)
         val refreshToken = refreshTokenService.createToken(account.id.value)
         call.respondRedirect(

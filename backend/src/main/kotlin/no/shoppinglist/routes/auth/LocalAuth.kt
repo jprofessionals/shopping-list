@@ -7,6 +7,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import no.shoppinglist.domain.Account
 import no.shoppinglist.service.AccountService
+import no.shoppinglist.service.ExternalListService
 import no.shoppinglist.service.JwtService
 import no.shoppinglist.service.RefreshTokenService
 
@@ -14,6 +15,7 @@ internal fun Route.loginRoute(
     accountService: AccountService,
     jwtService: JwtService,
     refreshTokenService: RefreshTokenService,
+    externalListService: ExternalListService? = null,
 ) {
     post("/login") {
         val request = call.receive<LocalLoginRequest>()
@@ -24,6 +26,7 @@ internal fun Route.loginRoute(
             return@post
         }
 
+        externalListService?.claimPendingLists(account.id.value, account.email)
         call.respond(createLoginResponse(account, jwtService, refreshTokenService))
     }
 }
@@ -32,6 +35,7 @@ internal fun Route.registerRoute(
     accountService: AccountService,
     jwtService: JwtService,
     refreshTokenService: RefreshTokenService,
+    externalListService: ExternalListService? = null,
 ) {
     post("/register") {
         val request = call.receive<LocalRegisterRequest>()
@@ -42,6 +46,7 @@ internal fun Route.registerRoute(
         }
 
         val account = accountService.createLocal(request.email, request.displayName, request.password)
+        externalListService?.claimPendingLists(account.id.value, account.email)
         call.respond(HttpStatusCode.Created, createLoginResponse(account, jwtService, refreshTokenService))
     }
 }

@@ -1,6 +1,7 @@
 package no.shoppinglist.service
 
 import kotlinx.serialization.Serializable
+import no.shoppinglist.domain.Account
 import no.shoppinglist.domain.ListItem
 import no.shoppinglist.domain.ListItems
 import no.shoppinglist.domain.ListShare
@@ -67,6 +68,18 @@ class ExternalListService(private val db: Database) {
             listId = list.id.value,
             shareToken = shareToken,
         )
+    }
+
+    fun claimPendingLists(accountId: UUID, email: String): Int = transaction(db) {
+        val account = Account.findById(accountId) ?: return@transaction 0
+        val pendingLists = ShoppingList.find { ShoppingLists.pendingEmail eq email }.toList()
+
+        pendingLists.forEach { list ->
+            list.owner = account
+            list.pendingEmail = null
+        }
+
+        pendingLists.size
     }
 
     private fun generateToken(): String {

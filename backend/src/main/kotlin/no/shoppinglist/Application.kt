@@ -277,7 +277,14 @@ private fun Application.configureRouting(
                 tokenBlacklistService,
                 broadcastService,
             )
-            authRoutes(authConfig, services.accountService, jwtService, refreshTokenService, tokenBlacklistService)
+            authRoutes(
+                authConfig,
+                services.accountService,
+                jwtService,
+                refreshTokenService,
+                tokenBlacklistService,
+                services.externalListService,
+            )
             householdRoutes(services.householdService, services.accountService, services.recurringItemService)
             configureListRoutes(services, eventBroadcaster)
             sharedAccessRoutes(services.listShareService, services.listItemService)
