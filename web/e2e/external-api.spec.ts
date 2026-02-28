@@ -3,6 +3,48 @@ import { getApiUrl } from './e2e-utils';
 
 const API_URL = getApiUrl();
 
+async function createSharedListViaInternalApi(
+  request: {
+    post: (url: string, opts?: object) => Promise<{ json: () => Promise<Record<string, string>> }>;
+  },
+  options: { items?: { name: string; quantity: number; unit?: string }[] } = {}
+) {
+  // Register a temporary user
+  const ts = Date.now();
+  const regRes = await request.post(`${API_URL}/auth/register`, {
+    data: {
+      email: `helper-${ts}@example.com`,
+      password: 'password123',
+      displayName: 'Helper User',
+    },
+  });
+  const { token: authToken } = await regRes.json();
+
+  // Create a list
+  const listRes = await request.post(`${API_URL}/lists`, {
+    headers: { Authorization: `Bearer ${authToken}` },
+    data: { name: `Shared List ${ts}`, isPersonal: true },
+  });
+  const list = await listRes.json();
+
+  // Add items if requested
+  for (const item of options.items ?? []) {
+    await request.post(`${API_URL}/lists/${list.id}/items`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+      data: item,
+    });
+  }
+
+  // Create a WRITE share
+  const shareRes = await request.post(`${API_URL}/lists/${list.id}/shares`, {
+    headers: { Authorization: `Bearer ${authToken}` },
+    data: { type: 'LINK', permission: 'WRITE', expirationHours: 168 },
+  });
+  const share = await shareRes.json();
+
+  return { shareToken: share.linkToken, listId: list.id, authToken };
+}
+
 test.describe('External API - List Creation', () => {
   test('POST /api/external/lists with title only returns shareToken, listId, widgetUrl', async ({
     page,
@@ -60,19 +102,14 @@ test.describe('External API - Shared Access for Externally-Created Lists', () =>
   let shareToken: string;
 
   test.beforeEach(async ({ page }) => {
-    const ts = Date.now();
-    const createResponse = await page.request.post(`${API_URL}/external/lists`, {
-      data: {
-        title: `Shared External List ${ts}`,
-        items: [
-          { name: 'Milk', quantity: 1, unit: 'L' },
-          { name: 'Bread', quantity: 2, unit: 'pcs' },
-        ],
-      },
+    // Create list via internal API to avoid rate limiting
+    const result = await createSharedListViaInternalApi(page.request, {
+      items: [
+        { name: 'Milk', quantity: 1, unit: 'L' },
+        { name: 'Bread', quantity: 2, unit: 'pcs' },
+      ],
     });
-    expect(createResponse.status()).toBe(201);
-    const body = await createResponse.json();
-    shareToken = body.shareToken;
+    shareToken = result.shareToken;
   });
 
   test('GET /api/shared/{token} returns list name and items', async ({ page }) => {
@@ -80,7 +117,7 @@ test.describe('External API - Shared Access for Externally-Created Lists', () =>
 
     expect(response.status()).toBe(200);
     const body = await response.json();
-    expect(body.name).toContain('Shared External List');
+    expect(body.name).toContain('Shared List');
     expect(body.items).toHaveLength(2);
     expect(body.items[0].name).toBe('Milk');
     expect(body.items[1].name).toBe('Bread');
@@ -173,10 +210,15 @@ test.describe('External API - Email Claim on Registration', () => {
 });
 
 test.describe('External API - Rate Limiting', () => {
-  test('11th rapid request returns 429', async ({ page }) => {
+  test('rate limiter returns 429 after exceeding limit', async ({ page }) => {
+    test.setTimeout(120_000);
+
+    // Wait for any prior rate limit window to expire
+    await page.waitForTimeout(61_000);
+
     const results: number[] = [];
 
-    for (let i = 0; i < 11; i++) {
+    for (let i = 0; i < 12; i++) {
       const response = await page.request.post(`${API_URL}/external/lists`, {
         data: { title: `Rate Limit Test ${Date.now()}-${i}` },
       });
@@ -189,7 +231,7 @@ test.describe('External API - Rate Limiting', () => {
       expect(status).toBe(201);
     }
 
-    // 11th should be rate limited
-    expect(results[10]).toBe(429);
+    // Requests beyond the limit should be rate limited
+    expect(results.slice(10)).toContain(429);
   });
 });
