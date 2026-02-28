@@ -6,6 +6,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import no.shoppinglist.config.TestCleanup
 import no.shoppinglist.config.TestDatabaseConfig
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -52,17 +53,7 @@ class RecurringItemTest :
         }
 
         afterSpec {
-            transaction(db) {
-                SchemaUtils.drop(
-                    ListShares,
-                    ListItems,
-                    RecurringItems,
-                    ShoppingLists,
-                    HouseholdMemberships,
-                    Households,
-                    Accounts,
-                )
-            }
+            TestCleanup.dropAllTables(db)
         }
 
         test("can create weekly recurring item") {

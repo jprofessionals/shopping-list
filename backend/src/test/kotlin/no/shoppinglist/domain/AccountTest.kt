@@ -3,6 +3,7 @@ package no.shoppinglist.domain
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import no.shoppinglist.config.TestCleanup
 import no.shoppinglist.config.TestDatabaseConfig
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -23,9 +24,7 @@ class AccountTest :
         }
 
         afterSpec {
-            transaction(db) {
-                SchemaUtils.drop(Accounts)
-            }
+            TestCleanup.dropAllTables(db)
         }
 
         test("can create and retrieve account") {

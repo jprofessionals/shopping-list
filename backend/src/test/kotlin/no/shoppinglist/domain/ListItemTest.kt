@@ -5,6 +5,7 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import no.shoppinglist.config.TestCleanup
 import no.shoppinglist.config.TestDatabaseConfig
 import no.shoppinglist.domain.RecurringItems
 import org.jetbrains.exposed.sql.Database
@@ -46,9 +47,7 @@ class ListItemTest :
         }
 
         afterSpec {
-            transaction(db) {
-                SchemaUtils.drop(ListItems, RecurringItems, ShoppingLists, HouseholdMemberships, Households, Accounts)
-            }
+            TestCleanup.dropAllTables(db)
         }
 
         test("can create list item with quantity") {

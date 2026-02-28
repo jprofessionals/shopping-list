@@ -3,6 +3,7 @@ package no.shoppinglist.service
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import no.shoppinglist.config.TestCleanup
 import no.shoppinglist.config.TestDatabaseConfig
 import no.shoppinglist.domain.Account
 import no.shoppinglist.domain.Accounts
@@ -26,9 +27,7 @@ class AccountServiceTest :
         }
 
         afterSpec {
-            transaction(db) {
-                SchemaUtils.drop(Accounts)
-            }
+            TestCleanup.dropAllTables(db)
         }
 
         test("findByEmail returns null for non-existent email") {

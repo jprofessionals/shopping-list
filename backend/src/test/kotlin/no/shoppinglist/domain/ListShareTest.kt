@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import no.shoppinglist.config.TestCleanup
 import no.shoppinglist.config.TestDatabaseConfig
 import no.shoppinglist.domain.RecurringItems
 import org.jetbrains.exposed.sql.Database
@@ -62,17 +63,7 @@ class ListShareTest :
         }
 
         afterSpec {
-            transaction(db) {
-                SchemaUtils.drop(
-                    ListShares,
-                    ListItems,
-                    RecurringItems,
-                    ShoppingLists,
-                    HouseholdMemberships,
-                    Households,
-                    Accounts,
-                )
-            }
+            TestCleanup.dropAllTables(db)
         }
 
         test("can create user share with write permission") {
