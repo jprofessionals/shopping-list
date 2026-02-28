@@ -1,10 +1,12 @@
 package no.shoppinglist.routes
 
 import io.ktor.http.*
+import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
+import no.shoppinglist.config.InMemoryRateLimiter
 import no.shoppinglist.service.ExternalItemRequest
 import no.shoppinglist.service.ExternalListService
 
@@ -22,12 +24,23 @@ data class CreateExternalListResponse(
     val widgetUrl: String,
 )
 
-fun Route.externalRoutes(externalListService: ExternalListService) {
+fun Route.externalRoutes(
+    externalListService: ExternalListService,
+    rateLimiter: InMemoryRateLimiter? = null,
+) {
     route("/api/external") {
         post("/lists") {
             call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
             call.response.header(HttpHeaders.AccessControlAllowMethods, "POST, GET, OPTIONS")
             call.response.header(HttpHeaders.AccessControlAllowHeaders, "Content-Type")
+
+            if (rateLimiter != null) {
+                val clientIp = call.request.origin.remoteAddress
+                if (!rateLimiter.tryAcquire(clientIp)) {
+                    call.respond(HttpStatusCode.TooManyRequests, mapOf("error" to "Rate limit exceeded"))
+                    return@post
+                }
+            }
 
             val request = call.receive<CreateExternalListRequest>()
 

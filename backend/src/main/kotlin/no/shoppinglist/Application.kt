@@ -33,6 +33,7 @@ import no.shoppinglist.config.AuthConfig
 import no.shoppinglist.config.DatabaseConfig
 import no.shoppinglist.config.RecurringConfig
 import no.shoppinglist.config.ValkeyConfig
+import no.shoppinglist.config.InMemoryRateLimiter
 import no.shoppinglist.routes.activityRoutes
 import no.shoppinglist.routes.externalRoutes
 import no.shoppinglist.routes.asyncApiRoutes
@@ -287,7 +288,8 @@ private fun Application.configureRouting(
             householdCommentRoutes(services.commentService, services.householdService, eventBroadcaster)
             asyncApiRoutes()
         }
-        externalRoutes(services.externalListService)
+        val rateLimiter = InMemoryRateLimiter(maxRequests = 10, windowSeconds = 60)
+        externalRoutes(services.externalListService, rateLimiter)
     }
 }
 
