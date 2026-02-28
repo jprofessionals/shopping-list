@@ -108,7 +108,7 @@ internal fun ShoppingList.toListResponse(accountId: UUID) =
         householdId = household?.id?.value?.toString(),
         isPersonal = isPersonal,
         createdAt = createdAt.toString(),
-        isOwner = owner.id.value == accountId,
+        isOwner = owner?.id?.value == accountId,
     )
 
 internal fun ListItem.toResponse() =

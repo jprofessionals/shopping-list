@@ -78,7 +78,7 @@ class ShoppingListService(
     private fun checkOwnerAccess(
         list: ShoppingList,
         accountId: UUID?,
-    ): SharePermission? = if (accountId != null && list.owner.id.value == accountId) SharePermission.WRITE else null
+    ): SharePermission? = if (accountId != null && list.owner?.id?.value == accountId) SharePermission.WRITE else null
 
     private fun checkHouseholdAccess(
         list: ShoppingList,

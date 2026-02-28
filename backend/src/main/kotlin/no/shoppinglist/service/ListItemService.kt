@@ -102,7 +102,7 @@ class ListItemService(
                 this.barcode = null
                 this.isChecked = false
                 this.checkedBy = null
-                this.createdBy = list.owner
+                this.createdBy = list.owner!!
                 this.createdAt = now
                 this.updatedAt = now
             }

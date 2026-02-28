@@ -82,7 +82,7 @@ class ShoppingListServiceTest :
             list shouldNotBe null
             transaction(db) {
                 list.name shouldBe "Groceries"
-                list.owner.id.value shouldBe testAccountId
+                list.owner?.id?.value shouldBe testAccountId
                 list.household shouldBe null
                 list.isPersonal shouldBe false
             }
