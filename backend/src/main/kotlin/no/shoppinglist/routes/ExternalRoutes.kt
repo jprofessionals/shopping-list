@@ -83,7 +83,7 @@ private suspend fun io.ktor.server.routing.RoutingContext.handleCreateList(
         CreateExternalListResponse(
             listId = result.listId.toString(),
             shareToken = result.shareToken,
-            widgetUrl = "/api/widget.js",
+            widgetUrl = "/widget.js",
         ),
     )
 }
