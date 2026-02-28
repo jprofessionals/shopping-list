@@ -251,7 +251,7 @@ private fun Application.configureShutdownHooks(
     }
 }
 
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "LongMethod")
 private fun Application.configureRouting(
     authConfig: AuthConfig,
     jwtService: JwtService,

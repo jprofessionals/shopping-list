@@ -28,23 +28,6 @@ export function ShoppingListWidgetApp({ token, apiUrl, theme }: WidgetProps) {
   const [items, setItems] = useState<ListItem[]>([]);
   const [newItemName, setNewItemName] = useState('');
 
-  const fetchList = useCallback(async () => {
-    try {
-      const response = await fetch(`${apiUrl}/api/shared/${token}`);
-      if (!response.ok) {
-        if (response.status === 410) setViewState('expired');
-        else if (response.status === 404) setViewState('not_found');
-        else setViewState('error');
-        return;
-      }
-      const data = await response.json();
-      setListData(data);
-      setViewState('success');
-    } catch {
-      setViewState('error');
-    }
-  }, [apiUrl, token]);
-
   const fetchItems = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/api/shared/${token}/items`);
@@ -57,9 +40,34 @@ export function ShoppingListWidgetApp({ token, apiUrl, theme }: WidgetProps) {
   }, [apiUrl, token]);
 
   useEffect(() => {
-    fetchList();
-    fetchItems();
-  }, [fetchList, fetchItems]);
+    let cancelled = false;
+    async function loadInitialData() {
+      try {
+        const [listRes, itemsRes] = await Promise.all([
+          fetch(`${apiUrl}/api/shared/${token}`),
+          fetch(`${apiUrl}/api/shared/${token}/items`),
+        ]);
+        if (cancelled) return;
+        if (!listRes.ok) {
+          if (listRes.status === 410) setViewState('expired');
+          else if (listRes.status === 404) setViewState('not_found');
+          else setViewState('error');
+          return;
+        }
+        setListData(await listRes.json());
+        setViewState('success');
+        if (itemsRes.ok) {
+          setItems(await itemsRes.json());
+        }
+      } catch {
+        if (!cancelled) setViewState('error');
+      }
+    }
+    loadInitialData();
+    return () => {
+      cancelled = true;
+    };
+  }, [apiUrl, token]);
 
   // WebSocket for real-time updates
   useEffect(() => {
@@ -149,9 +157,7 @@ export function ShoppingListWidgetApp({ token, apiUrl, theme }: WidgetProps) {
         maxWidth: '400px',
       }}
     >
-      <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: 600 }}>
-        {listData?.name}
-      </h3>
+      <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: 600 }}>{listData?.name}</h3>
 
       <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 12px 0' }}>
         {items.map((item) => (
@@ -167,7 +173,12 @@ export function ShoppingListWidgetApp({ token, apiUrl, theme }: WidgetProps) {
             }}
             onClick={() => toggleItem(item.id, item.isChecked)}
           >
-            <input type="checkbox" checked={item.isChecked} readOnly style={{ cursor: 'pointer' }} />
+            <input
+              type="checkbox"
+              checked={item.isChecked}
+              readOnly
+              style={{ cursor: 'pointer' }}
+            />
             <span
               style={{
                 textDecoration: item.isChecked ? 'line-through' : 'none',

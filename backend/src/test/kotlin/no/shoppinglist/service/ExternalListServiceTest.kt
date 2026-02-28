@@ -5,7 +5,13 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldHaveMinLength
 import no.shoppinglist.config.TestDatabaseConfig
-import no.shoppinglist.domain.*
+import no.shoppinglist.domain.Accounts
+import no.shoppinglist.domain.Households
+import no.shoppinglist.domain.ListItem
+import no.shoppinglist.domain.ListItems
+import no.shoppinglist.domain.ListShares
+import no.shoppinglist.domain.ShoppingList
+import no.shoppinglist.domain.ShoppingLists
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.transactions.transaction
