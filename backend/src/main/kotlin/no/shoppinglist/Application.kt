@@ -15,6 +15,7 @@ import io.ktor.server.netty.EngineMain
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.swagger.swaggerUI
+import io.ktor.server.response.respondFile
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
@@ -22,6 +23,7 @@ import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -297,6 +299,19 @@ private fun Application.configureRouting(
         }
         val rateLimiter = InMemoryRateLimiter(maxRequests = 10, windowSeconds = 60)
         externalRoutes(services.externalListService, rateLimiter)
+        get("/widget.js") {
+            call.response.headers.append(HttpHeaders.AccessControlAllowOrigin, "*")
+            call.response.headers.append(HttpHeaders.CacheControl, "public, max-age=3600")
+            val widgetFile = File("../web/dist-widget/widget.js")
+            if (widgetFile.exists()) {
+                call.respondFile(widgetFile)
+            } else {
+                call.respondText(
+                    "Widget not built. Run: cd web && npm run build:widget",
+                    status = io.ktor.http.HttpStatusCode.NotFound,
+                )
+            }
+        }
     }
 }
 
