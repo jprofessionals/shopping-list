@@ -33,27 +33,29 @@ fun Route.externalRoutes(
     externalListService: ExternalListService,
     rateLimiter: InMemoryRateLimiter? = null,
 ) {
-    route("/api/external") {
+    route("/external") {
         post("/lists") {
             handleCreateList(externalListService, rateLimiter)
         }
 
         options("/lists") {
-            call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
-            call.response.header(HttpHeaders.AccessControlAllowMethods, "POST, GET, OPTIONS")
-            call.response.header(HttpHeaders.AccessControlAllowHeaders, "Content-Type")
+            setCorsHeaders()
             call.respond(HttpStatusCode.OK)
         }
     }
+}
+
+private fun io.ktor.server.routing.RoutingContext.setCorsHeaders() {
+    call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+    call.response.header(HttpHeaders.AccessControlAllowMethods, "POST, GET, OPTIONS")
+    call.response.header(HttpHeaders.AccessControlAllowHeaders, "Content-Type")
 }
 
 private suspend fun io.ktor.server.routing.RoutingContext.handleCreateList(
     externalListService: ExternalListService,
     rateLimiter: InMemoryRateLimiter?,
 ) {
-    call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
-    call.response.header(HttpHeaders.AccessControlAllowMethods, "POST, GET, OPTIONS")
-    call.response.header(HttpHeaders.AccessControlAllowHeaders, "Content-Type")
+    setCorsHeaders()
 
     if (rateLimiter != null) {
         val clientIp = call.request.origin.remoteAddress
@@ -64,24 +66,24 @@ private suspend fun io.ktor.server.routing.RoutingContext.handleCreateList(
     }
 
     val request = call.receive<CreateExternalListRequest>()
-
     if (request.title.isNullOrBlank()) {
         call.respond(HttpStatusCode.BadRequest, mapOf("error" to "title is required"))
         return
     }
 
-    val result = externalListService.createExternalList(
-        title = request.title,
-        email = request.email,
-        items = request.items,
-    )
+    val result =
+        externalListService.createExternalList(
+            title = request.title,
+            email = request.email,
+            items = request.items,
+        )
 
     call.respond(
         HttpStatusCode.Created,
         CreateExternalListResponse(
             listId = result.listId.toString(),
             shareToken = result.shareToken,
-            widgetUrl = "/widget.js",
+            widgetUrl = "/api/widget.js",
         ),
     )
 }

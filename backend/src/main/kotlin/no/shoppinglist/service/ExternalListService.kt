@@ -3,7 +3,6 @@ package no.shoppinglist.service
 import kotlinx.serialization.Serializable
 import no.shoppinglist.domain.Account
 import no.shoppinglist.domain.ListItem
-import no.shoppinglist.domain.ListItems
 import no.shoppinglist.domain.ListShare
 import no.shoppinglist.domain.SharePermission
 import no.shoppinglist.domain.ShareType
@@ -27,31 +26,42 @@ data class ExternalListResult(
     val shareToken: String,
 )
 
-class ExternalListService(private val db: Database) {
-
+class ExternalListService(
+    private val db: Database,
+) {
     private val random = SecureRandom()
 
     fun createExternalList(
         title: String,
         email: String?,
         items: List<ExternalItemRequest>,
-    ): ExternalListResult = transaction(db) {
-        val shareToken = generateToken()
+    ): ExternalListResult =
+        transaction(db) {
+            val shareToken = generateToken()
 
-        val list = ShoppingList.new {
-            this.name = title
-            this.pendingEmail = email
-            this.createdAt = Instant.now()
+            val list =
+                ShoppingList.new {
+                    this.name = title
+                    this.pendingEmail = email
+                    this.createdAt = Instant.now()
+                }
+
+            ListShare.new {
+                this.list = list
+                this.type = ShareType.LINK
+                this.permission = SharePermission.WRITE
+                this.linkToken = shareToken
+                this.createdAt = Instant.now()
+            }
+
+            createItems(list, items)
+            ExternalListResult(listId = list.id.value, shareToken = shareToken)
         }
 
-        ListShare.new {
-            this.list = list
-            this.type = ShareType.LINK
-            this.permission = SharePermission.WRITE
-            this.linkToken = shareToken
-            this.createdAt = Instant.now()
-        }
-
+    private fun createItems(
+        list: ShoppingList,
+        items: List<ExternalItemRequest>,
+    ) {
         items.forEach { item ->
             ListItem.new {
                 this.list = list
@@ -63,24 +73,23 @@ class ExternalListService(private val db: Database) {
                 this.updatedAt = Instant.now()
             }
         }
-
-        ExternalListResult(
-            listId = list.id.value,
-            shareToken = shareToken,
-        )
     }
 
-    fun claimPendingLists(accountId: UUID, email: String): Int = transaction(db) {
-        val account = Account.findById(accountId) ?: return@transaction 0
-        val pendingLists = ShoppingList.find { ShoppingLists.pendingEmail eq email }.toList()
+    fun claimPendingLists(
+        accountId: UUID,
+        email: String,
+    ): Int =
+        transaction(db) {
+            val account = Account.findById(accountId) ?: return@transaction 0
+            val pendingLists = ShoppingList.find { ShoppingLists.pendingEmail eq email }.toList()
 
-        pendingLists.forEach { list ->
-            list.owner = account
-            list.pendingEmail = null
+            pendingLists.forEach { list ->
+                list.owner = account
+                list.pendingEmail = null
+            }
+
+            pendingLists.size
         }
-
-        pendingLists.size
-    }
 
     private fun generateToken(): String {
         val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"

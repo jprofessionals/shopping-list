@@ -23,7 +23,6 @@ import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
-import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -33,25 +32,25 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import no.shoppinglist.config.AuthConfig
 import no.shoppinglist.config.DatabaseConfig
+import no.shoppinglist.config.InMemoryRateLimiter
 import no.shoppinglist.config.RecurringConfig
 import no.shoppinglist.config.ValkeyConfig
-import no.shoppinglist.config.InMemoryRateLimiter
 import no.shoppinglist.routes.activityRoutes
-import no.shoppinglist.routes.externalRoutes
 import no.shoppinglist.routes.asyncApiRoutes
 import no.shoppinglist.routes.auth.authRoutes
 import no.shoppinglist.routes.comment.householdCommentRoutes
 import no.shoppinglist.routes.comment.listCommentRoutes
+import no.shoppinglist.routes.externalRoutes
 import no.shoppinglist.routes.household.householdRoutes
 import no.shoppinglist.routes.preferencesRoutes
 import no.shoppinglist.routes.sharedAccessRoutes
 import no.shoppinglist.routes.shoppinglist.shoppingListRoutes
 import no.shoppinglist.routes.suggestionRoutes
 import no.shoppinglist.routes.webSocketRoutes
-import no.shoppinglist.service.ExternalListService
 import no.shoppinglist.service.AccountService
 import no.shoppinglist.service.ActivityService
 import no.shoppinglist.service.CommentService
+import no.shoppinglist.service.ExternalListService
 import no.shoppinglist.service.HouseholdService
 import no.shoppinglist.service.ItemHistoryService
 import no.shoppinglist.service.JwtService
@@ -68,6 +67,7 @@ import no.shoppinglist.service.ValkeyService
 import no.shoppinglist.websocket.EventBroadcaster
 import no.shoppinglist.websocket.WebSocketBroadcastService
 import no.shoppinglist.websocket.WebSocketSessionManager
+import java.io.File
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
@@ -296,20 +296,20 @@ private fun Application.configureRouting(
             listCommentRoutes(services.commentService, services.shoppingListService, eventBroadcaster)
             householdCommentRoutes(services.commentService, services.householdService, eventBroadcaster)
             asyncApiRoutes()
-        }
-        val rateLimiter = InMemoryRateLimiter(maxRequests = 10, windowSeconds = 60)
-        externalRoutes(services.externalListService, rateLimiter)
-        get("/widget.js") {
-            call.response.headers.append(HttpHeaders.AccessControlAllowOrigin, "*")
-            call.response.headers.append(HttpHeaders.CacheControl, "public, max-age=3600")
-            val widgetFile = File("../web/dist-widget/widget.js")
-            if (widgetFile.exists()) {
-                call.respondFile(widgetFile)
-            } else {
-                call.respondText(
-                    "Widget not built. Run: cd web && npm run build:widget",
-                    status = io.ktor.http.HttpStatusCode.NotFound,
-                )
+            val rateLimiter = InMemoryRateLimiter(maxRequests = 10, windowSeconds = 60)
+            externalRoutes(services.externalListService, rateLimiter)
+            get("/widget.js") {
+                call.response.headers.append(HttpHeaders.AccessControlAllowOrigin, "*")
+                call.response.headers.append(HttpHeaders.CacheControl, "public, max-age=3600")
+                val widgetFile = File("../web/dist-widget/widget.js")
+                if (widgetFile.exists()) {
+                    call.respondFile(widgetFile)
+                } else {
+                    call.respondText(
+                        "Widget not built. Run: cd web && npm run build:widget",
+                        status = io.ktor.http.HttpStatusCode.NotFound,
+                    )
+                }
             }
         }
     }
