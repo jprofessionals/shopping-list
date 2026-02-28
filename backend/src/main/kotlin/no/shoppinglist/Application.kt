@@ -34,6 +34,7 @@ import no.shoppinglist.config.DatabaseConfig
 import no.shoppinglist.config.RecurringConfig
 import no.shoppinglist.config.ValkeyConfig
 import no.shoppinglist.routes.activityRoutes
+import no.shoppinglist.routes.externalRoutes
 import no.shoppinglist.routes.asyncApiRoutes
 import no.shoppinglist.routes.auth.authRoutes
 import no.shoppinglist.routes.comment.householdCommentRoutes
@@ -44,6 +45,7 @@ import no.shoppinglist.routes.sharedAccessRoutes
 import no.shoppinglist.routes.shoppinglist.shoppingListRoutes
 import no.shoppinglist.routes.suggestionRoutes
 import no.shoppinglist.routes.webSocketRoutes
+import no.shoppinglist.service.ExternalListService
 import no.shoppinglist.service.AccountService
 import no.shoppinglist.service.ActivityService
 import no.shoppinglist.service.CommentService
@@ -131,6 +133,7 @@ private data class Services(
     val preferencesService: PreferencesService,
     val commentService: CommentService,
     val recurringItemService: RecurringItemService,
+    val externalListService: ExternalListService,
 )
 
 private fun createServices(): Services {
@@ -147,6 +150,7 @@ private fun createServices(): Services {
         preferencesService = PreferencesService(db),
         commentService = CommentService(db),
         recurringItemService = RecurringItemService(db),
+        externalListService = ExternalListService(db),
     )
 }
 
@@ -283,6 +287,7 @@ private fun Application.configureRouting(
             householdCommentRoutes(services.commentService, services.householdService, eventBroadcaster)
             asyncApiRoutes()
         }
+        externalRoutes(services.externalListService)
     }
 }
 
