@@ -3,6 +3,7 @@ package no.shoppinglist.service
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import no.shoppinglist.config.TestCleanup
 import no.shoppinglist.config.TestDatabaseConfig
 import no.shoppinglist.domain.Account
 import no.shoppinglist.domain.Accounts
@@ -37,9 +38,7 @@ class RefreshTokenServiceTest :
         }
 
         afterSpec {
-            transaction(db) {
-                SchemaUtils.drop(RefreshTokens, Accounts)
-            }
+            TestCleanup.dropAllTables(db)
         }
 
         test("createToken and validateAndGetAccountId work correctly") {

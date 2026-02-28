@@ -94,12 +94,14 @@ class RecurringScheduler(
         today: LocalDate,
     ) {
         try {
-            val itemData = transaction(db) {
-                RecurringItem.find {
-                    (RecurringItems.household eq householdId) and
-                        (RecurringItems.isActive eq true)
-                }.map { it.toData() }
-            }
+            val itemData =
+                transaction(db) {
+                    RecurringItem
+                        .find {
+                            (RecurringItems.household eq householdId) and
+                                (RecurringItems.isActive eq true)
+                        }.map { it.toData() }
+                }
             val dueItems = itemData.filter { isDue(it, today) }
             if (dueItems.isEmpty()) return
 
@@ -108,15 +110,9 @@ class RecurringScheduler(
             val newList = shoppingListService.create(listName, ownerId, householdId, false)
             createListItems(newList.id.value, dueItems, ownerId)
             eventBroadcaster.broadcastListCreatedBySystem(newList, householdId)
-            logger.info(
-                "Created recurring list '{}' for household {} with {} items",
-                listName, householdId, dueItems.size,
-            )
+            logger.info("Created recurring list '{}' with {} items", listName, dueItems.size)
         } catch (e: Exception) {
-            logger.error(
-                "Failed to process recurring items for household {}: {}",
-                householdId, e.message,
-            )
+            logger.error("Recurring items failed for household {}: {}", householdId, e.message)
         }
     }
 
@@ -127,7 +123,12 @@ class RecurringScheduler(
     ) {
         for (item in items) {
             listItemService.createFromRecurring(
-                listId, item.name, item.quantity, item.unit, ownerId, item.id,
+                listId,
+                item.name,
+                item.quantity,
+                item.unit,
+                ownerId,
+                item.id,
             )
         }
     }

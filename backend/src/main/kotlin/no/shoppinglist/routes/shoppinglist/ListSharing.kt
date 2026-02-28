@@ -43,7 +43,7 @@ private fun Route.listSharesRoute(
             shoppingListService.findById(listId)
                 ?: return@get call.respond(HttpStatusCode.NotFound)
 
-        val isOwner = transaction { list.owner.id.value == accountId }
+        val isOwner = transaction { list.owner?.id?.value == accountId }
         if (!isOwner) return@get call.respond(HttpStatusCode.Forbidden)
 
         val shares = listShareService.findByListId(listId)
@@ -67,7 +67,7 @@ private fun Route.createShareRoute(
             shoppingListService.findById(listId)
                 ?: return@post call.respond(HttpStatusCode.NotFound)
 
-        val isOwner = transaction { list.owner.id.value == accountId }
+        val isOwner = transaction { list.owner?.id?.value == accountId }
         if (!isOwner) return@post call.respond(HttpStatusCode.Forbidden)
 
         val request = call.receive<CreateShareRequest>()
@@ -156,7 +156,7 @@ private fun Route.deleteShareRoute(
             shoppingListService.findById(listId)
                 ?: return@delete call.respond(HttpStatusCode.NotFound)
 
-        val isOwner = transaction { list.owner.id.value == accountId }
+        val isOwner = transaction { list.owner?.id?.value == accountId }
         if (!isOwner) return@delete call.respond(HttpStatusCode.Forbidden)
 
         listShareService.delete(shareId)

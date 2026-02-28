@@ -31,6 +31,7 @@ import no.shoppinglist.config.AuthConfig
 import no.shoppinglist.config.GoogleAuthConfig
 import no.shoppinglist.config.JwtConfig
 import no.shoppinglist.config.LocalAuthConfig
+import no.shoppinglist.config.TestCleanup
 import no.shoppinglist.config.TestDatabaseConfig
 import no.shoppinglist.config.TestValkeyConfig
 import no.shoppinglist.domain.Accounts
@@ -107,9 +108,7 @@ class HouseholdRoutesTest :
         }
 
         afterSpec {
-            transaction(db) {
-                SchemaUtils.drop(Comments, RecurringItems, RefreshTokens, HouseholdMemberships, Households, Accounts)
-            }
+            TestCleanup.dropAllTables(db)
         }
 
         fun configureContentNegotiation(app: Application) {

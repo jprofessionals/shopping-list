@@ -7,6 +7,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import no.shoppinglist.config.TestCleanup
 import no.shoppinglist.config.TestDatabaseConfig
 import no.shoppinglist.domain.Account
 import no.shoppinglist.domain.Accounts
@@ -66,17 +67,7 @@ class RecurringItemServiceTest :
         }
 
         afterSpec {
-            transaction(db) {
-                SchemaUtils.drop(
-                    RecurringItems,
-                    ListShares,
-                    ListItems,
-                    ShoppingLists,
-                    HouseholdMemberships,
-                    Households,
-                    Accounts,
-                )
-            }
+            TestCleanup.dropAllTables(db)
         }
 
         test("create adds recurring item to household") {

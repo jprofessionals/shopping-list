@@ -131,7 +131,7 @@ private fun buildDetailResponse(
                 ?.toString(),
         isPersonal = list.isPersonal,
         createdAt = list.createdAt.toString(),
-        isOwner = list.owner.id.value == accountId,
+        isOwner = list.owner?.id?.value == accountId,
         items = items.map { it.toResponse() },
         isPinned = isPinned,
     )
@@ -178,7 +178,7 @@ private fun Route.deleteListRoute(shoppingListService: ShoppingListService) {
             shoppingListService.findById(listId)
                 ?: return@delete call.respond(HttpStatusCode.NotFound)
 
-        val isOwner = transaction { list.owner.id.value == accountId }
+        val isOwner = transaction { list.owner?.id?.value == accountId }
         if (!isOwner) {
             return@delete call.respond(HttpStatusCode.Forbidden)
         }

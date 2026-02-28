@@ -5,6 +5,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import no.shoppinglist.config.RecurringConfig
+import no.shoppinglist.config.TestCleanup
 import no.shoppinglist.config.TestDatabaseConfig
 import no.shoppinglist.config.ValkeyConfig
 import no.shoppinglist.domain.Account
@@ -113,17 +114,7 @@ class RecurringSchedulerTest :
         }
 
         afterSpec {
-            transaction(db) {
-                SchemaUtils.drop(
-                    RecurringItems,
-                    ListShares,
-                    ListItems,
-                    ShoppingLists,
-                    HouseholdMemberships,
-                    Households,
-                    Accounts,
-                )
-            }
+            TestCleanup.dropAllTables(db)
         }
 
         test("creates list when items are due (never purchased)") {

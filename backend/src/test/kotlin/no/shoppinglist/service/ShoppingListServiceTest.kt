@@ -3,6 +3,7 @@ package no.shoppinglist.service
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import no.shoppinglist.config.TestCleanup
 import no.shoppinglist.config.TestDatabaseConfig
 import no.shoppinglist.domain.Account
 import no.shoppinglist.domain.Accounts
@@ -60,20 +61,7 @@ class ShoppingListServiceTest :
         }
 
         afterSpec {
-            transaction(db) {
-                SchemaUtils.drop(
-                    Comments,
-                    PinnedLists,
-                    ListActivities,
-                    ListShares,
-                    ListItems,
-                    RecurringItems,
-                    ShoppingLists,
-                    HouseholdMemberships,
-                    Households,
-                    Accounts,
-                )
-            }
+            TestCleanup.dropAllTables(db)
         }
 
         test("create creates a standalone shopping list") {
@@ -82,7 +70,7 @@ class ShoppingListServiceTest :
             list shouldNotBe null
             transaction(db) {
                 list.name shouldBe "Groceries"
-                list.owner.id.value shouldBe testAccountId
+                list.owner?.id?.value shouldBe testAccountId
                 list.household shouldBe null
                 list.isPersonal shouldBe false
             }

@@ -15,6 +15,7 @@ import io.ktor.server.netty.EngineMain
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.swagger.swaggerUI
+import io.ktor.server.response.respondFile
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
@@ -31,6 +32,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import no.shoppinglist.config.AuthConfig
 import no.shoppinglist.config.DatabaseConfig
+import no.shoppinglist.config.InMemoryRateLimiter
 import no.shoppinglist.config.RecurringConfig
 import no.shoppinglist.config.ValkeyConfig
 import no.shoppinglist.routes.activityRoutes
@@ -38,6 +40,7 @@ import no.shoppinglist.routes.asyncApiRoutes
 import no.shoppinglist.routes.auth.authRoutes
 import no.shoppinglist.routes.comment.householdCommentRoutes
 import no.shoppinglist.routes.comment.listCommentRoutes
+import no.shoppinglist.routes.externalRoutes
 import no.shoppinglist.routes.household.householdRoutes
 import no.shoppinglist.routes.preferencesRoutes
 import no.shoppinglist.routes.sharedAccessRoutes
@@ -47,6 +50,7 @@ import no.shoppinglist.routes.webSocketRoutes
 import no.shoppinglist.service.AccountService
 import no.shoppinglist.service.ActivityService
 import no.shoppinglist.service.CommentService
+import no.shoppinglist.service.ExternalListService
 import no.shoppinglist.service.HouseholdService
 import no.shoppinglist.service.ItemHistoryService
 import no.shoppinglist.service.JwtService
@@ -63,6 +67,7 @@ import no.shoppinglist.service.ValkeyService
 import no.shoppinglist.websocket.EventBroadcaster
 import no.shoppinglist.websocket.WebSocketBroadcastService
 import no.shoppinglist.websocket.WebSocketSessionManager
+import java.io.File
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
@@ -131,6 +136,7 @@ private data class Services(
     val preferencesService: PreferencesService,
     val commentService: CommentService,
     val recurringItemService: RecurringItemService,
+    val externalListService: ExternalListService,
 )
 
 private fun createServices(): Services {
@@ -147,6 +153,7 @@ private fun createServices(): Services {
         preferencesService = PreferencesService(db),
         commentService = CommentService(db),
         recurringItemService = RecurringItemService(db),
+        externalListService = ExternalListService(db),
     )
 }
 
@@ -244,7 +251,7 @@ private fun Application.configureShutdownHooks(
     }
 }
 
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "LongMethod")
 private fun Application.configureRouting(
     authConfig: AuthConfig,
     jwtService: JwtService,
@@ -272,7 +279,14 @@ private fun Application.configureRouting(
                 tokenBlacklistService,
                 broadcastService,
             )
-            authRoutes(authConfig, services.accountService, jwtService, refreshTokenService, tokenBlacklistService)
+            authRoutes(
+                authConfig,
+                services.accountService,
+                jwtService,
+                refreshTokenService,
+                tokenBlacklistService,
+                services.externalListService,
+            )
             householdRoutes(services.householdService, services.accountService, services.recurringItemService)
             configureListRoutes(services, eventBroadcaster)
             sharedAccessRoutes(services.listShareService, services.listItemService)
@@ -282,6 +296,21 @@ private fun Application.configureRouting(
             listCommentRoutes(services.commentService, services.shoppingListService, eventBroadcaster)
             householdCommentRoutes(services.commentService, services.householdService, eventBroadcaster)
             asyncApiRoutes()
+            val rateLimiter = InMemoryRateLimiter(maxRequests = 10, windowSeconds = 60)
+            externalRoutes(services.externalListService, rateLimiter)
+            get("/widget.js") {
+                call.response.headers.append(HttpHeaders.AccessControlAllowOrigin, "*")
+                call.response.headers.append(HttpHeaders.CacheControl, "public, max-age=3600")
+                val widgetFile = File("../web/dist-widget/widget.js")
+                if (widgetFile.exists()) {
+                    call.respondFile(widgetFile)
+                } else {
+                    call.respondText(
+                        "Widget not built. Run: cd web && npm run build:widget",
+                        status = io.ktor.http.HttpStatusCode.NotFound,
+                    )
+                }
+            }
         }
     }
 }

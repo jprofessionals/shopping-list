@@ -64,9 +64,7 @@ fun Route.sharedAccessRoutes(
     }
 }
 
-private suspend fun RoutingContext.validateShareToken(
-    listShareService: ListShareService,
-): ShareContext? {
+private suspend fun RoutingContext.validateShareToken(listShareService: ListShareService): ShareContext? {
     val token = call.parameters["token"]
     val share = token?.let { listShareService.findByToken(it) }
 
@@ -128,8 +126,9 @@ private suspend fun RoutingContext.resolveSharedItem(
     ctx: ShareContext,
     listItemService: ListItemService,
 ): UUID? {
-    val itemId = parseItemId(call.parameters["itemId"])
-        ?: return null.also { call.respond(HttpStatusCode.BadRequest) }
+    val itemId =
+        parseItemId(call.parameters["itemId"])
+            ?: return null.also { call.respond(HttpStatusCode.BadRequest) }
 
     val item = listItemService.findById(itemId)
     val belongsToList = item != null && transaction { item.list.id.value } == ctx.listId
@@ -151,8 +150,9 @@ private fun Route.checkItemRoute(
         }
 
         val itemId = resolveSharedItem(ctx, listItemService) ?: return@post
-        val updated = listItemService.toggleCheckAnonymous(itemId)
-            ?: return@post call.respond(HttpStatusCode.NotFound)
+        val updated =
+            listItemService.toggleCheckAnonymous(itemId)
+                ?: return@post call.respond(HttpStatusCode.NotFound)
 
         call.respond(HttpStatusCode.OK, buildSharedItemResponse(updated))
     }
@@ -179,12 +179,13 @@ private fun Route.addItemRoute(
             )
         }
 
-        val item = listItemService.createForSharedAccess(
-            ctx.listId,
-            request.name,
-            request.quantity,
-            request.unit,
-        )
+        val item =
+            listItemService.createForSharedAccess(
+                ctx.listId,
+                request.name,
+                request.quantity,
+                request.unit,
+            )
         call.respond(HttpStatusCode.Created, buildSharedItemResponse(item))
     }
 }
@@ -212,8 +213,9 @@ private fun Route.updateItemRoute(
             )
         }
 
-        val updated = listItemService.update(itemId, request.name, request.quantity, request.unit)
-            ?: return@patch call.respond(HttpStatusCode.NotFound)
+        val updated =
+            listItemService.update(itemId, request.name, request.quantity, request.unit)
+                ?: return@patch call.respond(HttpStatusCode.NotFound)
 
         call.respond(HttpStatusCode.OK, buildSharedItemResponse(updated))
     }

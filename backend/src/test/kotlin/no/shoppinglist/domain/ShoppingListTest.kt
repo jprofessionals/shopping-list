@@ -5,6 +5,7 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import no.shoppinglist.config.TestCleanup
 import no.shoppinglist.config.TestDatabaseConfig
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -42,9 +43,7 @@ class ShoppingListTest :
         }
 
         afterSpec {
-            transaction(db) {
-                SchemaUtils.drop(ShoppingLists, HouseholdMemberships, Households, Accounts)
-            }
+            TestCleanup.dropAllTables(db)
         }
 
         test("can create shopping list in household") {
