@@ -28,14 +28,16 @@ export function ShoppingListWidgetApp({ token, apiUrl, theme }: WidgetProps) {
   const [items, setItems] = useState<ListItem[]>([]);
   const [newItemName, setNewItemName] = useState('');
 
-  const fetchItems = useCallback(async () => {
+  const fetchList = useCallback(async () => {
     try {
-      const response = await fetch(`${apiUrl}/api/shared/${token}/items`);
+      const response = await fetch(`${apiUrl}/api/shared/${token}`);
       if (response.ok) {
-        setItems(await response.json());
+        const data = await response.json();
+        setListData(data);
+        setItems(data.items ?? []);
       }
     } catch {
-      // silently fail for items refresh
+      // silently fail for refresh
     }
   }, [apiUrl, token]);
 
@@ -43,22 +45,18 @@ export function ShoppingListWidgetApp({ token, apiUrl, theme }: WidgetProps) {
     let cancelled = false;
     async function loadInitialData() {
       try {
-        const [listRes, itemsRes] = await Promise.all([
-          fetch(`${apiUrl}/api/shared/${token}`),
-          fetch(`${apiUrl}/api/shared/${token}/items`),
-        ]);
+        const response = await fetch(`${apiUrl}/api/shared/${token}`);
         if (cancelled) return;
-        if (!listRes.ok) {
-          if (listRes.status === 410) setViewState('expired');
-          else if (listRes.status === 404) setViewState('not_found');
+        if (!response.ok) {
+          if (response.status === 410) setViewState('expired');
+          else if (response.status === 404) setViewState('not_found');
           else setViewState('error');
           return;
         }
-        setListData(await listRes.json());
+        const data = await response.json();
+        setListData(data);
+        setItems(data.items ?? []);
         setViewState('success');
-        if (itemsRes.ok) {
-          setItems(await itemsRes.json());
-        }
       } catch {
         if (!cancelled) setViewState('error');
       }
@@ -78,14 +76,14 @@ export function ShoppingListWidgetApp({ token, apiUrl, theme }: WidgetProps) {
     try {
       ws = new WebSocket(wsUrl);
       ws.onmessage = () => {
-        fetchItems();
+        fetchList();
       };
     } catch {
       // WebSocket optional — still works without it
     }
 
     return () => ws?.close();
-  }, [apiUrl, token, fetchItems]);
+  }, [apiUrl, token, fetchList]);
 
   const addItem = async () => {
     if (!newItemName.trim()) return;
@@ -96,20 +94,18 @@ export function ShoppingListWidgetApp({ token, apiUrl, theme }: WidgetProps) {
         body: JSON.stringify({ name: newItemName.trim(), quantity: 1 }),
       });
       setNewItemName('');
-      fetchItems();
+      fetchList();
     } catch {
       // show inline error
     }
   };
 
-  const toggleItem = async (itemId: string, checked: boolean) => {
+  const toggleItem = async (itemId: string) => {
     try {
       await fetch(`${apiUrl}/api/shared/${token}/items/${itemId}/check`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checked: !checked }),
+        method: 'POST',
       });
-      fetchItems();
+      fetchList();
     } catch {
       // silently fail
     }
@@ -171,7 +167,7 @@ export function ShoppingListWidgetApp({ token, apiUrl, theme }: WidgetProps) {
               borderBottom: `1px solid ${border}`,
               cursor: 'pointer',
             }}
-            onClick={() => toggleItem(item.id, item.isChecked)}
+            onClick={() => toggleItem(item.id)}
           >
             <input
               type="checkbox"
